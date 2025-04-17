@@ -12,7 +12,7 @@ async function gerarFlashcard() {
   output.textContent = "⏳ Gerando flashcard...";
 
   try {
-    const response = await fetch("http://localhost:3000/flashcard", {
+    const response = await fetch("https://one7-04-25backend.onrender.com/flashcard", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
