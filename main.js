@@ -4,85 +4,97 @@ const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-btn');
 const loadingIndicator = document.getElementById('loading-indicator');
 
-let chatHistory = []; // Array to store conversation history { role: "user" | "model", parts: [{text: ""}] }
+// Histórico da conversa (será sincronizado com o backend)
+// A estrutura interna das mensagens será { role: "user" | "model" | "function", parts: [...] }
+// Onde 'parts' pode conter {text: "..."} ou {functionCall: ...} ou {functionResponse: ...}
+let chatHistory = [];
 
-// --- Function to add messages to the UI ---
+// Mensagem inicial estática do bot no HTML. Não adicionamos ao histórico enviado.
+const initialBotMessageHTML = "Olá! Como posso ajudar?";
+
+
+// --- Função para adicionar mensagens à UI ---
 function addMessageToChat(sender, text, cssClass = '') {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message', `${sender}-message`);
     if (cssClass) {
-        messageDiv.classList.add(cssClass); // Add extra class if provided (e.g., for errors)
+        messageDiv.classList.add(cssClass);
     }
-    messageDiv.textContent = text;
+    // Para renderizar quebras de linha se o bot as enviar (opcional, mas bom para formatação)
+    // messageDiv.innerHTML = text.replace(/\n/g, '<br>'); // Cuidado com XSS se o texto puder conter HTML malicioso
+    messageDiv.textContent = text; // Mais seguro por padrão
     chatOutput.appendChild(messageDiv);
 
     // Auto-scroll to the bottom
     chatOutput.scrollTop = chatOutput.scrollHeight;
 }
 
-// --- Function to handle sending a message ---
+// --- Função para lidar com o envio de uma mensagem ---
 async function handleSendMessage() {
     const userMessage = messageInput.value.trim();
-    if (!userMessage) return; // Don't send empty messages
+    if (!userMessage) return; // Não enviar mensagens vazias
 
-    // 1. Display User Message Instantly
+    // 1. Exibir Mensagem do Usuário Instantaneamente
     addMessageToChat('user', userMessage);
-    messageInput.value = ''; // Clear input field
+    messageInput.value = ''; // Limpar campo de entrada
 
-    // 2. Show Loading Indicator & Disable Input/Button
+    // 2. Mostrar Indicador de Carregamento & Desabilitar Entrada/Botão
     loadingIndicator.style.display = 'block';
     sendButton.disabled = true;
     messageInput.disabled = true;
-    chatOutput.scrollTop = chatOutput.scrollHeight; // Scroll down to show loading
+    chatOutput.scrollTop = chatOutput.scrollHeight;
 
     try {
-        // 3. Send Message and History to Backend
-        const response = await fetch('/chat', { // Use the new backend endpoint
+        // 3. Enviar Mensagem e Histórico para o Backend
+        console.log("Enviando para /chat:", { mensagem: userMessage, historico: chatHistory });
+        const response = await fetch('/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 mensagem: userMessage,
-                historico: chatHistory // Send the current history
+                historico: chatHistory // Enviar o histórico atual
             })
         });
 
-        // 4. Handle Backend Response
-        const data = await response.json(); // Always try to parse JSON first
+        // 4. Lidar com a Resposta do Backend
+        const data = await response.json();
 
         if (!response.ok) {
-            // If response status is not 2xx, throw an error with the message from backend JSON
-            throw new Error(data.erro || `Erro HTTP: ${response.status}`);
+            // Usa a mensagem de erro do backend (data.erro) ou um fallback
+            throw new Error(data.erro || `Erro HTTP: ${response.status} - ${response.statusText}`);
         }
 
-        // 5. Update Local History
-        chatHistory = data.historico; // Update history with the one returned by backend
+        // 5. Atualizar Histórico Local com o histórico completo do backend
+        // Este histórico pode conter 'functionCall' e 'functionResponse' parts,
+        // mas não as exibimos diretamente na UI principal, apenas o texto final.
+        chatHistory = data.historico;
+        console.log("Histórico atualizado do backend (últimos 2 turnos):", JSON.stringify(chatHistory.slice(-2), null, 2));
 
-        // 6. Display Bot Response
+        // 6. Exibir Resposta do Bot (que deve ser texto)
         addMessageToChat('bot', data.resposta);
 
     } catch (error) {
         console.error("Falha ao conversar com o bot:", error);
-        // 7. Display Error Message in Chat
+        // 7. Exibir Mensagem de Erro no Chat
         addMessageToChat('system', `⚠️ Erro: ${error.message}`, 'error-message');
     } finally {
-        // 8. Hide Loading Indicator & Re-enable Input/Button
+        // 8. Esconder Indicador de Carregamento & Reabilitar Entrada/Botão
         loadingIndicator.style.display = 'none';
         sendButton.disabled = false;
         messageInput.disabled = false;
-        messageInput.focus(); // Set focus back to input
-        chatOutput.scrollTop = chatOutput.scrollHeight; // Ensure scrolled to bottom after response/error
+        messageInput.focus(); // Definir foco de volta para a entrada
+        chatOutput.scrollTop = chatOutput.scrollHeight;
     }
 }
 
 // --- Event Listeners ---
 sendButton.addEventListener('click', handleSendMessage);
 messageInput.addEventListener('keypress', (event) => {
-    // Send message if Enter key is pressed
     if (event.key === 'Enter') {
         handleSendMessage();
     }
 });
 
-// Optional: Add initial bot message to history if needed,
-// though the backend doesn't use it for the *first* user message.
-// chatHistory.push({ role: "model", parts: [{ text: "Olá! Como posso ajudar?" }] });
+// Se houver uma mensagem inicial no HTML, ela já está lá.
+// O `chatHistory` começa vazio, o que é correto para a primeira interação com o backend.
+console.log("Client.js carregado. Histórico inicial:", chatHistory);

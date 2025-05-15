@@ -38,7 +38,7 @@
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            max-height: 65vh;
+            max-height: 65vh; /* Ajuste conforme necessário */
         }
 
         #chat-output {
@@ -53,7 +53,7 @@
             max-width: 80%;
             word-wrap: break-word;
             line-height: 1.4;
-            white-space: pre-wrap; /* Para renderizar quebras de linha enviadas pelo bot */
+            white-space: pre-wrap; /* Para renderizar quebras de linha e espaços corretamente */
         }
 
         .user-message {
@@ -70,29 +70,26 @@
             border-bottom-left-radius: 5px;
         }
 
-        .system-message.error-message { /* Ajuste para ser mais específico */
+        .system-message.error-message, /* Mais específico para erros */
+        .system-message { /* Estilo base para mensagens de sistema */
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
             align-self: center;
             text-align: center;
             max-width: 90%;
-        }
-         .system-message { /* Estilo base para mensagens de sistema, se houver outras */
             font-style: italic;
-            color: #555;
-            text-align: center;
             font-size: 0.9em;
-             align-self: center;
-             max-width: 90%;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
         }
-
 
         #loading-indicator {
             color: #555;
             font-style: italic;
             text-align: center;
             padding: 0.5rem;
+            align-self: center; /* Centralizar o indicador */
         }
 
         #input-area {
@@ -145,7 +142,7 @@
 
     <div id="chat-container">
         <div id="chat-output">
-            <!-- Mensagem inicial estática. O histórico real começa vazio. -->
+            <!-- Mensagem inicial estática. O histórico real começa vazio no client.js. -->
             <div class="message bot-message">Olá! Como posso ajudar?</div>
         </div>
         <div id="loading-indicator" style="display: none;">Bot está digitando...</div>
