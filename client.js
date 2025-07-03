@@ -1,101 +1,86 @@
-// public/client.js (ou client.js na raiz, se servido por express.static(__dirname))
-const chatOutput = document.getElementById('chat-output');
+// 1. SELECIONA OS ELEMENTOS DA PÁGINA
+const chatWindow = document.getElementById('chat-window');
 const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-btn');
-const loadingIndicator = document.getElementById('loading-indicator');
+const sendButton = document.getElementById('send-button');
 
-// Array para armazenar o histórico da conversa localmente para exibição na UI
-// Mantendo a estrutura { role: "user" | "model", parts: [{text: ""}] } para consistência interna,
-// embora não seja enviado para o backend /flashcard.
-let chatHistory = [];
+// 2. DEFINE A URL DA SUA API (BACKEND)
+// **ATENÇÃO:** Você DEVE substituir esta string pela URL real que o Render te dará para o seu backend.
+// Por enquanto, deixamos um placeholder. O "/chat" no final é o nome da rota que criamos no server.js.
+const apiUrl = 'URL_DO_SEU_BACKEND_NO_RENDER_VAI_AQUI/chat';
 
-// Adiciona a mensagem inicial do bot ao histórico local, se desejar.
-// O index.html já exibe esta mensagem, então isso é para manter o array chatHistory sincronizado.
-if (chatOutput.querySelector('.bot-message') && chatOutput.querySelector('.bot-message').textContent === "Olá! Como posso ajudar?") {
-    chatHistory.push({ role: "model", parts: [{ text: "Olá! Como posso ajudar?" }] });
+// 3. FUNÇÃO PARA ADICIONAR MENSAGEM NA JANELA DO CHAT
+function addMessage(text, sender) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+    messageElement.textContent = text;
+    chatWindow.appendChild(messageElement);
+
+    // Rola a janela para a mensagem mais recente
+    chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-
-// --- Função para adicionar mensagens à UI ---
-function addMessageToChat(sender, text, cssClass = '') {
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message', `${sender}-message`);
-    if (cssClass) {
-        messageDiv.classList.add(cssClass);
-    }
-    messageDiv.textContent = text;
-    chatOutput.appendChild(messageDiv);
-
-    // Auto-scroll to the bottom
-    chatOutput.scrollTop = chatOutput.scrollHeight;
-}
-
-// --- Função para lidar com o envio de uma mensagem ---
-async function handleSendMessage() {
+// 4. FUNÇÃO PRINCIPAL PARA ENVIAR A MENSAGEM
+async function sendMessage() {
     const userMessage = messageInput.value.trim();
-    if (!userMessage) return; // Não enviar mensagens vazias
 
-    // 1. Exibir Mensagem do Usuário Instantaneamente
-    addMessageToChat('user', userMessage);
-    // Adicionar mensagem do usuário ao histórico local
-    chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-    messageInput.value = ''; // Limpar campo de entrada
+    // Não faz nada se a mensagem estiver vazia
+    if (!userMessage) {
+        return;
+    }
 
-    // 2. Mostrar Indicador de Carregamento & Desabilitar Entrada/Botão
-    loadingIndicator.style.display = 'block';
-    sendButton.disabled = true;
-    messageInput.disabled = true;
-    chatOutput.scrollTop = chatOutput.scrollHeight; // Rolar para baixo para mostrar o carregamento
+    // Adiciona a mensagem do usuário na tela
+    addMessage(userMessage, 'user');
+
+    // Limpa o campo de input
+    messageInput.value = '';
 
     try {
-        // 3. Enviar Mensagem para o Backend (/flashcard)
-        const response = await fetch('/flashcard', { // Endpoint correto
+        // Mostra uma mensagem de "digitando..." para o usuário
+        addMessage('Digitando...', 'bot');
+
+        // Envia a mensagem para o backend (aqui acontece a mágica!)
+        const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt: userMessage // Enviar a mensagem do usuário como 'prompt'
-                // Não é necessário enviar 'historico' para este endpoint
-            })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: userMessage }),
         });
 
-        // 4. Lidar com a Resposta do Backend
-        const data = await response.json(); // Tentar parsear JSON primeiro
-
+        // Se a resposta do servidor não for OK (ex: erro 500), lança um erro
         if (!response.ok) {
-            // Se o status da resposta não for 2xx, lançar um erro com a mensagem do backend
-            // O server.js envia { error: "mensagem de erro" }
-            throw new Error(data.error || `Erro HTTP: ${response.status}`);
+            throw new Error(`Erro na rede: ${response.statusText}`);
         }
 
-        // 5. Obter a resposta do bot (conteúdo do flashcard)
-        const botResponse = data.result; // O server.js retorna { result: "texto" }
+        // Converte a resposta do servidor para JSON
+        const data = await response.json();
 
-        // 6. Exibir Resposta do Bot
-        addMessageToChat('bot', botResponse);
-        // Adicionar resposta do bot ao histórico local
-        chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
+        // Remove a mensagem "Digitando..."
+        const typingMessage = document.querySelector('.bot-message:last-child');
+        if (typingMessage && typingMessage.textContent === 'Digitando...') {
+            typingMessage.remove();
+        }
+
+        // Adiciona a resposta do bot na tela
+        addMessage(data.response, 'bot');
 
     } catch (error) {
-        console.error("Falha ao interagir com o bot:", error);
-        // 7. Exibir Mensagem de Erro no Chat
-        addMessageToChat('system', `⚠️ Erro: ${error.message}`, 'error-message');
-        // Opcional: Adicionar erro ao histórico local se precisar rastrear
-        // chatHistory.push({ role: "system", parts: [{ text: `⚠️ Erro: ${error.message}` }] });
-    } finally {
-        // 8. Esconder Indicador de Carregamento & Reabilitar Entrada/Botão
-        loadingIndicator.style.display = 'none';
-        sendButton.disabled = false;
-        messageInput.disabled = false;
-        messageInput.focus(); // Definir foco de volta para a entrada
-        chatOutput.scrollTop = chatOutput.scrollHeight; // Garantir que rolou para o final após resposta/erro
+        // Em caso de erro, avisa o usuário
+        console.error('Erro ao enviar mensagem:', error);
+        addMessage('Desculpe, não consegui me conectar. Tente novamente mais tarde.', 'bot');
     }
 }
 
-// --- Event Listeners ---
-sendButton.addEventListener('click', handleSendMessage);
+// 5. EVENT LISTENERS (COMO O USUÁRIO INTERAGE)
+// Dispara a função sendMessage quando o botão "Enviar" é clicado
+sendButton.addEventListener('click', sendMessage);
+
+// Dispara a função sendMessage quando o usuário aperta a tecla "Enter" no campo de input
 messageInput.addEventListener('keypress', (event) => {
-    // Enviar mensagem se a tecla Enter for pressionada
     if (event.key === 'Enter') {
-        handleSendMessage();
+        sendMessage();
     }
 });
+
+// Mensagem inicial de boas-vindas
+addMessage('Olá! Como posso te ajudar hoje?', 'bot');

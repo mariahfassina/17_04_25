@@ -1,153 +1,35 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Gemini</title>
+    <title>Meu Chatbot</title>
     <style>
-        /* Todo o CSS que estava em style.css agora está aqui */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f4f8; /* Slightly cooler background */
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh; /* Ensure body takes full height */
-        }
-
-        h1 {
-            color: #0a3d62; /* Darker blue */
-            background-color: #e0f0ff;
-            padding: 0.8rem 2rem;
-            border-radius: 25px;
-            box-shadow: 0 4px 12px rgba(10, 61, 98, 0.15);
-            margin-top: 1.5rem;
-        }
-
-        #chat-container {
-            background: #ffffff;
-            border: 1px solid #cce0ff;
-            padding: 1rem;
-            border-radius: 15px;
-            margin-top: 1.5rem;
-            max-width: 600px;
-            width: 90%;
-            box-shadow: 0 4px 15px rgba(10, 61, 98, 0.1);
-            flex-grow: 1; /* Allow chat container to grow */
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto; /* Add scroll for long chats */
-            max-height: 65vh; /* Limit chat height */
-        }
-
-        #chat-output {
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem; /* Space between messages */
-        }
-
-        .message {
-            padding: 0.6rem 1rem;
-            border-radius: 15px;
-            max-width: 80%;
-            word-wrap: break-word; /* Wrap long words */
-            line-height: 1.4;
-        }
-
-        .user-message {
-            background-color: #cce0ff;
-            color: #0a3d62;
-            align-self: flex-end; /* Align user messages to the right */
-            border-bottom-right-radius: 5px; /* Style tweaks */
-        }
-
-        .bot-message {
-            background-color: #e2e3e5;
-            color: #333;
-            align-self: flex-start; /* Align bot messages to the left */
-            border-bottom-left-radius: 5px; /* Style tweaks */
-        }
-
-        .error-message {
-            background-color: #f8d7da; /* Reddish background for errors */
-            color: #721c24; /* Dark red text */
-            border: 1px solid #f5c6cb;
-            align-self: center; /* Center error messages */
-            text-align: center;
-            max-width: 90%;
-        }
-
-        #loading-indicator {
-            color: #555;
-            font-style: italic;
-            text-align: center;
-            padding: 0.5rem;
-        }
-
-        #input-area {
-            display: flex;
-            align-items: center;
-            margin-top: 1rem;
-            margin-bottom: 1.5rem; /* Add some bottom margin */
-            padding: 0.5rem;
-            background-color: #ffffff;
-            border-radius: 25px;
-            box-shadow: 0 2px 8px rgba(10, 61, 98, 0.1);
-            max-width: 620px; /* Slightly wider than chat */
-            width: 90%;
-        }
-
-        #message-input {
-            flex-grow: 1;
-            padding: 0.7rem 1rem;
-            font-size: 1rem;
-            border: none;
-            border-radius: 20px;
-            outline: none;
-            background-color: transparent; /* Make input transparent */
-        }
-
-        #send-btn {
-            padding: 0.7rem 1.5rem;
-            font-size: 1rem;
-            margin-left: 0.5rem;
-            border: none;
-            border-radius: 20px;
-            background-color: #0a3d62; /* Match h1 color */
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        #send-btn:hover {
-            background-color: #08304f; /* Darken on hover */
-        }
-
-        #send-btn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
+        #chat-container { width: 90%; max-width: 600px; height: 80vh; border: 1px solid #ccc; border-radius: 8px; display: flex; flex-direction: column; background-color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #chat-window { flex-grow: 1; padding: 20px; overflow-y: auto; border-bottom: 1px solid #ccc; }
+        .message { margin-bottom: 15px; padding: 10px; border-radius: 8px; max-width: 80%; }
+        .user-message { background-color: #dcf8c6; align-self: flex-end; margin-left: auto; }
+        .bot-message { background-color: #f1f0f0; align-self: flex-start; }
+        #input-container { display: flex; padding: 10px; }
+        #message-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
+        #send-button { padding: 10px 20px; margin-left: 10px; background-color: #007bff; color: white; border: none; border-radius: 20px; cursor: pointer; }
+        #send-button:hover { background-color: #0056b3; }
     </style>
-    <!-- Removi o link para style.css daqui -->
 </head>
 <body>
-    <h1>Chatbot com Memória</h1>
 
     <div id="chat-container">
-        <div id="chat-output">
-            <!-- Messages will appear here -->
-            <div class="message bot-message">Olá! Como posso ajudar?</div>
+        <div id="chat-window">
+            <!-- As mensagens aparecerão aqui -->
         </div>
-        <div id="loading-indicator" style="display: none;">Bot está digitando...</div> <!-- Hidden by default -->
+        <div id="input-container">
+            <input type="text" id="message-input" placeholder="Digite sua mensagem...">
+            <button id="send-button">Enviar</button>
+        </div>
     </div>
 
-    <div id="input-area">
-        <input type="text" id="message-input" placeholder="Digite sua mensagem..." />
-        <button id="send-btn">Enviar</button>
-    </div>
-
-    <script src="client.js"></script> <!-- Link para o JS continua igual -->
+    <!-- MUITO IMPORTANTE: O script é carregado no final do body -->
+    <script src="client.js"></script>
 </body>
 </html>
