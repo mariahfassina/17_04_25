@@ -49,7 +49,7 @@ async function handleSendMessage() {
 
     try {
         // 3. Enviar Mensagem para o Backend (/flashcard)
-        const response = await fetch('https://one7-04-25backend.onrender.com/flashcard', { // Endpoint correto
+       const response = await fetch("https://one7-04-25backend.onrender.com/chat", { // Endpoint correto
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
