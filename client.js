@@ -1,128 +1,135 @@
-// 1. SELEtores de ELEMENTOS e estado global
-const chatWindow = document.getElementById('chat-window');
-const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-button');
-
-const apiUrlBase = 'https://one7-04-25backend.onrender.com'; // Sua URL do backend no Render
-let chatHistory = []; // Array para guardar o histórico da conversa
+// 1. IMPORTAÇÕES
+const express = require('express');
+const cors = require('cors');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { MongoClient } = require('mongodb');
+require('dotenv').config();
 
 // ===================================================================
-// 2. FUNÇÕES DE API (FALANDO COM O BACKEND)
+// 2. VERIFICAÇÃO DE VARIÁVEIS DE AMBIENTE (À PROVA DE BALAS)
+// ===================================================================
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const MONGO_URI_LOGS = process.env.MONGO_URI_LOGS;
+const MONGO_URI_HISTORY = process.env.MONGO_URI_HISTORY;
+let BUNDLE_URL_FRONTEND = process.env.BUNDLE_URL_FRONTEND;
+
+// Define a URL do frontend padrão se não estiver nas variáveis de ambiente
+if (!BUNDLE_URL_FRONTEND) {
+    console.log("AVISO: BUNDLE_URL_FRONTEND não definida. Usando valor padrão: https://chatbotflashcards.vercel.app");
+    BUNDLE_URL_FRONTEND = 'https://chatbotflashcards.vercel.app';
+}
+
+if (!GEMINI_API_KEY) {
+    console.error("ERRO FATAL: Variável de ambiente GEMINI_API_KEY não foi definida!");
+    process.exit(1); // Para o servidor imediatamente
+}
+if (!MONGO_URI_LOGS) {
+    console.error("ERRO FATAL: Variável de ambiente MONGO_URI_LOGS não foi definida!");
+    process.exit(1);
+}
+if (!MONGO_URI_HISTORY) {
+    console.error("ERRO FATAL: Variável de ambiente MONGO_URI_HISTORY não foi definida!");
+    process.exit(1);
+}
+
+// 3. CONFIGURAÇÃO INICIAL
+const app = express();
+const corsOptions = {
+    origin: BUNDLE_URL_FRONTEND,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.use(express.json());
+
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+let dadosRankingVitrine = [];
+
+// ===================================================================
+// 4. ROTAS DA API (sem alterações)
 // ===================================================================
 
-// Função para registrar o acesso inicial (Log e Ranking)
-async function registrarAcessoInicial() {
-    const NOME_DO_SEU_BOT = "Mariah SuperBot"; // <-- MUDE PARA O NOME DO SEU BOT
-    const ID_DO_SEU_BOT = "mariah-bot-01"; // <-- CRIE UM ID ÚNICO
-
+// ROTA PRINCIPAL DO CHAT
+app.post('/chat', async (req, res) => {
     try {
-        // Pega o IP do usuário (usando uma API externa gratuita)
-        const ipResponse = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipResponse.json();
-        const userIp = ipData.ip;
+        const { message } = req.body;
+        if (!message) return res.status(400).json({ error: 'Nenhuma mensagem foi fornecida.' });
 
-        // Envia o log de acesso para o banco de dados compartilhado
-        await fetch(`${apiUrlBase}/api/log-acesso`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ip: userIp, acao: 'acesso_inicial', nomeBot: NOME_DO_SEU_BOT })
-        });
-        console.log("Log de acesso inicial registrado.");
-
-        // Envia dados para o ranking simulado
-        await fetch(`${apiUrlBase}/api/ranking/registrar-acesso-bot`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ botId: ID_DO_SEU_BOT, nomeBot: NOME_DO_SEU_BOT })
-        });
-        console.log("Acesso para ranking registrado.");
-
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        const result = await model.generateContent(message);
+        const response = await result.response;
+        const text = response.text();
+        res.json({ response: text });
     } catch (error) {
-        console.error("Falha ao registrar acesso inicial:", error);
-    }
-}
-
-// Função para salvar o histórico do chat antes de fechar a página
-async function salvarHistorico() {
-    if (chatHistory.length > 0) {
-        // Usamos navigator.sendBeacon para mais chance de sucesso ao fechar a página
-        const data = JSON.stringify({ history: chatHistory });
-        navigator.sendBeacon(`${apiUrlBase}/api/chat/save-history`, data);
-        console.log("Tentativa de salvar histórico enviada.");
-    }
-}
-
-// ===================================================================
-// 3. LÓGICA DO CHAT
-// ===================================================================
-
-// Adiciona uma mensagem na tela
-function addMessage(text, sender) {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
-    messageElement.textContent = text;
-    chatWindow.appendChild(messageElement);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-}
-
-// Envia a mensagem do usuário para o backend e processa a resposta
-async function sendMessage() {
-    const userMessage = messageInput.value.trim();
-    if (!userMessage) return;
-
-    addMessage(userMessage, 'user');
-    chatHistory.push({ role: 'user', text: userMessage }); // Salva no histórico local
-    messageInput.value = '';
-
-    try {
-        addMessage('Digitando...', 'bot');
-
-        const response = await fetch(`${apiUrlBase}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMessage }),
-        });
-
-        const typingMessage = document.querySelector('.bot-message:last-child');
-        if (typingMessage && typingMessage.textContent === 'Digitando...') {
-            typingMessage.remove();
-        }
-
-        if (!response.ok) {
-            throw new Error(`Erro na rede: ${response.status}`);
-        }
-
-        const data = await response.json();
-        addMessage(data.response, 'bot');
-        chatHistory.push({ role: 'bot', text: data.response }); // Salva no histórico local
-
-    } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
-        addMessage('Desculpe, ocorreu um erro. Tente novamente.', 'bot');
-    }
-}
-
-// ===================================================================
-// 4. EVENTOS (QUANDO AS COISAS ACONTECEM)
-// ===================================================================
-
-// Quando o usuário clica em Enviar
-sendButton.addEventListener('click', sendMessage);
-
-// Quando o usuário aperta Enter
-messageInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        sendMessage();
+        console.error('Erro na rota /chat:', error);
+        res.status(500).json({ error: 'Ocorreu um erro no servidor ao processar sua mensagem.' });
     }
 });
 
-// Quando a página é carregada pela primeira vez
-window.addEventListener('load', () => {
-    addMessage('Olá! Como posso te ajudar hoje?', 'bot');
-    registrarAcessoInicial(); // Registra o acesso para log e ranking
+// ROTA PARA SALVAR LOG DE ACESSO
+app.post('/api/log-acesso', async (req, res) => {
+    const { ip, acao, nomeBot } = req.body;
+    if (!ip || !acao || !nomeBot) {
+        return res.status(400).json({ error: "Dados de log incompletos (IP, ação e nomeBot são obrigatórios)." });
+    }
+
+    const client = new MongoClient(MONGO_URI_LOGS);
+    try {
+        await client.connect();
+        const db = client.db("IIW2023A_Logs");
+        const collection = db.collection("tb_cl_user_log_acess");
+        const agora = new Date();
+        const dataFormatada = agora.toISOString().split('T')[0];
+        const horaFormatada = agora.toTimeString().split(' ')[0];
+        const logEntry = { col_data: dataFormatada, col_hora: horaFormatada, col_IP: ip, col_nome_bot: nomeBot, col_acao: acao };
+        await collection.insertOne(logEntry);
+        res.status(201).json({ message: "Log de acesso registrado com sucesso." });
+    } catch (error) {
+        console.error("Erro ao registrar log de acesso:", error);
+        res.status(500).json({ error: "Erro ao conectar ou inserir no banco de dados de logs." });
+    } finally {
+        if (client) await client.close();
+    }
 });
 
-// Quando o usuário tenta fechar a página
-window.addEventListener('beforeunload', (event) => {
-    salvarHistorico(); // Tenta salvar o histórico do chat
+// ROTA PARA RANKING
+app.post('/api/ranking/registrar-acesso-bot', (req, res) => {
+    const { botId, nomeBot } = req.body;
+    if (!botId || !nomeBot) return res.status(400).json({ error: "ID e Nome do Bot são obrigatórios." });
+    
+    const botExistente = dadosRankingVitrine.find(b => b.botId === botId);
+    if (botExistente) {
+        botExistente.contagem += 1;
+        botExistente.ultimoAcesso = new Date();
+    } else {
+        dadosRankingVitrine.push({ botId, nomeBot, contagem: 1, ultimoAcesso: new Date() });
+    }
+    console.log('[Servidor] Dados de ranking atualizados:', dadosRankingVitrine);
+    res.status(201).json({ message: `Acesso ao bot ${nomeBot} registrado.` });
+});
+
+// ROTA PARA SALVAR HISTÓRICO
+app.post('/api/chat/save-history', async (req, res) => {
+    const { history } = req.body;
+    if (!history || !Array.isArray(history) || history.length === 0) return res.status(400).json({ error: 'Histórico inválido.' });
+    
+    const client = new MongoClient(MONGO_URI_HISTORY);
+    try {
+        await client.connect();
+        const db = client.db("MeuChatbotHistory");
+        const collection = db.collection("chat_histories");
+        const historyEntry = { createdAt: new Date(), conversation: history };
+        await collection.insertOne(historyEntry);
+        res.status(201).json({ message: "Histórico salvo." });
+    } catch (error) {
+        console.error("Erro ao salvar histórico:", error);
+        res.status(500).json({ error: "Erro ao salvar no banco de dados de histórico." });
+    } finally {
+        if (client) await client.close();
+    }
+});
+
+// 5. INICIALIZAÇÃO DO SERVIDOR
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
