@@ -6,7 +6,7 @@ const sendButton = document.getElementById('send-button');
 // 2. DEFINE A URL DA SUA API (BACKEND)
 // **ATENÇÃO:** Você DEVE substituir esta string pela URL real que o Render te dará para o seu backend.
 // Por enquanto, deixamos um placeholder. O "/chat" no final é o nome da rota que criamos no server.js.
-const apiUrl = 'URL_DO_SEU_BACKEND_NO_RENDER_VAI_AQUI/chat';
+const apiUrl = 'https://one7-04-25backend.onrender.com/chat';
 
 // 3. FUNÇÃO PARA ADICIONAR MENSAGEM NA JANELA DO CHAT
 function addMessage(text, sender) {
