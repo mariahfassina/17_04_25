@@ -184,21 +184,23 @@ async function sendMessage() {
     messageInput.value = '';
 
     // Verificar comandos de flash cards
+    const normalizedUserMessage = userMessage.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
     if (flashcardMode) {
-        if (userMessage.toLowerCase() === 'próximo') {
+        if (normalizedUserMessage === 'proximo') {
             mostrarFlashcard();
             return;
-        } else if (userMessage.toLowerCase() === 'resposta') {
+        } else if (normalizedUserMessage === 'resposta') {
             mostrarResposta();
             return;
-        } else if (userMessage.toLowerCase() === 'sair') {
+        } else if (normalizedUserMessage === 'sair') {
             flashcardMode = false;
             currentFlashcard = null;
             addMessage("Voltando ao modo chat normal. Como posso te ajudar?", 'bot');
             return;
         }
     } else {
-        if (userMessage.toLowerCase().includes('flashcard') || userMessage.toLowerCase().includes('flash card')) {
+        if (normalizedUserMessage.includes('flashcard') || normalizedUserMessage.includes('flash card')) {
             iniciarFlashcards();
             return;
         }
