@@ -1,205 +1,223 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Flash Cards</title>
-    <style>
-        /* SEU CSS ORIGINAL - RESTAURADO */
-        body { 
-            font-family: sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            box-sizing: border-box; /* Garante que o padding não quebre o layout */
+document.addEventListener('DOMContentLoaded', () => {
+    // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
+    const chatWindow = document.getElementById('chat-window');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const newChatButton = document.getElementById('new-chat-btn');
+    const historyList = document.getElementById('history-list');
+
+    // --- VARIÁVEIS DE ESTADO ---
+    let localChatHistory = []; // Histórico da conversa ATUAL
+    let allConversations = []; // Array com TODAS as conversas salvas
+    let currentConversationId = null;
+    let flashcardMode = false;
+    let currentFlashcard = null;
+    let isBotTyping = false;
+
+    // --- SISTEMA DE FLASH CARDS (EXISTENTE) ---
+    const flashcards = [
+        { pergunta: "O que é JavaScript?", resposta: "JavaScript é uma linguagem de programação interpretada estruturada, de script em alto nível com tipagem dinâmica fraca e multiparadigma." },
+        { pergunta: "O que é HTML?", resposta: "HTML (HyperText Markup Language) é uma linguagem de marcação utilizada na construção de páginas na Web." },
+        { pergunta: "O que é CSS?", resposta: "CSS (Cascading Style Sheets) é um mecanismo para adicionar estilo a um documento web." },
+        { pergunta: "O que é uma função em programação?", resposta: "Uma função é um bloco de código que executa uma tarefa específica e pode ser reutilizado." },
+        { pergunta: "O que é um array?", resposta: "Um array é uma estrutura de dados que armazena uma coleção de elementos, geralmente do mesmo tipo." }
+    ];
+
+    // --- FUNÇÕES DE GERENCIAMENTO DE HISTÓRICO ---
+
+    const loadAllConversations = () => {
+        const saved = localStorage.getItem('flashcard_chatbot_conversations');
+        if (saved) {
+            allConversations = JSON.parse(saved);
         }
-        
-        .main-container {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            max-width: 1200px;
-            height: 90vh; /* Ajustado para melhor visualização */
+        updateHistoryListUI();
+    };
+
+    const saveAllConversations = () => {
+        localStorage.setItem('flashcard_chatbot_conversations', JSON.stringify(allConversations));
+    };
+
+    const generateConversationId = () => `conv_${Date.now()}`;
+
+    const createNewConversation = (firstMessageText) => {
+        currentConversationId = generateConversationId();
+        const newConversation = {
+            id: currentConversationId,
+            title: firstMessageText.substring(0, 35) + (firstMessageText.length > 35 ? '...' : ''),
+            messages: [...localChatHistory],
+            timestamp: new Date().toISOString()
+        };
+        allConversations.unshift(newConversation);
+        saveAllConversations();
+        updateHistoryListUI();
+    };
+
+    const updateCurrentConversation = () => {
+        if (!currentConversationId) return;
+        const conversationIndex = allConversations.findIndex(conv => conv.id === currentConversationId);
+        if (conversationIndex !== -1) {
+            allConversations[conversationIndex].messages = [...localChatHistory];
+            allConversations[conversationIndex].timestamp = new Date().toISOString();
+            saveAllConversations();
         }
+    };
+
+    const loadConversation = (conversationId) => {
+        const conversation = allConversations.find(conv => conv.id === conversationId);
+        if (!conversation) return;
+
+        currentConversationId = conversationId;
+        localChatHistory = [...conversation.messages];
         
-        #chat-container { 
-            flex: 3; /* Dando mais espaço para o chat */
-            border: 1px solid #ccc; 
-            border-radius: 12px; 
-            display: flex; 
-            flex-direction: column; 
-            background-color: white; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
+        chatWindow.innerHTML = '';
         
-        #chat-window { 
-            flex-grow: 1; 
-            padding: 20px; 
-            overflow-y: auto; 
-            border-bottom: 1px solid #eee; 
-            display: flex; /* Adicionado para alinhar mensagens */
-            flex-direction: column; /* Adicionado para alinhar mensagens */
-        }
+        localChatHistory.forEach(message => {
+            addMessageToUI(message.text, message.role === 'user' ? 'user' : 'bot');
+        });
         
-        .message { 
-            margin-bottom: 15px; 
-            padding: 12px 16px; 
-            border-radius: 18px; 
-            max-width: 80%; 
-            word-wrap: break-word;
-        }
-        
-        .user-message { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            align-self: flex-end; 
-            margin-left: auto; 
-            border-bottom-right-radius: 4px;
-        }
-        
-        .bot-message { 
-            background-color: #f1f3f4; 
-            color: #333;
-            align-self: flex-start; 
-            border-bottom-left-radius: 4px;
-        }
-        
-        #input-container { 
-            display: flex; 
-            padding: 20px; 
-            background-color: #f8f9fa;
-            border-radius: 0 0 12px 12px;
-        }
-        
-        #message-input { 
-            flex-grow: 1; 
-            padding: 12px 16px; 
-            border: 2px solid #e9ecef; 
-            border-radius: 25px; 
-            outline: none; 
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-        
-        #message-input:focus {
-            border-color: #667eea;
-        }
-        
-        #send-button { 
-            padding: 12px 24px; 
-            margin-left: 12px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            border: none; 
-            border-radius: 25px; 
-            cursor: pointer; 
-            font-weight: 600;
-            transition: transform 0.2s ease;
-        }
-        
-        #send-button:hover { 
-            transform: translateY(-px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        updateHistoryListUI();
+        messageInput.focus();
+    };
+
+    const updateHistoryListUI = () => {
+        historyList.innerHTML = '';
+        allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        allConversations.forEach(conversation => {
+            const listItem = document.createElement('li');
+            listItem.className = 'history-item';
+            listItem.textContent = conversation.title;
+            listItem.dataset.id = conversation.id;
+
+            if (conversation.id === currentConversationId) {
+                listItem.classList.add('active');
+            }
+            
+            listItem.addEventListener('click', () => {
+                loadConversation(conversation.id);
+            });
+            
+            historyList.appendChild(listItem);
+        });
+    };
+
+    const startNewChat = () => {
+        currentConversationId = null;
+        localChatHistory = [];
+        flashcardMode = false;
+        currentFlashcard = null;
+        chatWindow.innerHTML = '';
+        addMessageToUI('Olá! Sou seu assistente com Flash Cards! 🎯', 'bot');
+        addMessageToUI('Digite "flashcard" para começar a estudar ou faça uma pergunta normal.', 'bot');
+        updateHistoryListUI();
+        messageInput.focus();
+    };
+
+    // --- FUNÇÕES DE INTERFACE E LÓGICA DO CHAT ---
+
+    const addMessageToUI = (text, sender) => {
+        const typingIndicator = chatWindow.querySelector('.bot-message:last-child.typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
         }
 
-        /* ADIÇÕES MÍNIMAS PARA O HISTÓRICO */
-        #history-container {
-            flex: 1; /* Ocupa menos espaço */
-            background-color: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        #history-container h3 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-        
-        #new-chat-btn {
-            background: #f1f3f4;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        #new-chat-btn:hover {
-            background-color: #e9ecef;
-        }
-        
-        #history-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex-grow: 1;
-        }
-        
-        .history-item {
-            padding: 10px;
-            margin-bottom: 8px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .history-item.active {
-            background-color: #e9d5ff; /* Um lilás claro para combinar */
-            font-weight: bold;
-        }
-        
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-                height: auto;
-                padding: 10px;
-            }
-            #history-container {
-                order: -1; /* Coloca o histórico no topo em telas pequenas */
-                max-height: 200px;
-                margin-bottom: 10px;
-            }
-            #chat-container {
-                height: 70vh;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="main-container">
-        <!-- Container do Chat (agora à esquerda) -->
-        <div id="chat-container">
-            <div id="chat-window">
-                <!-- As mensagens aparecerão aqui -->
-            </div>
-            <div id="input-container">
-                <input type="text" id="message-input" placeholder="Digite sua mensagem ou 'flashcard' para estudar...">
-                <button id="send-button">Enviar</button>
-            </div>
-        </div>
-        
-        <!-- Container do Histórico (à direita, como no seu layout original) -->
-        <div id="history-container">
-            <h3>📚 Histórico</h3>
-            <button id="new-chat-btn">➕ Nova Conversa</button>
-            <ul id="history-list">
-                <!-- Os históricos aparecerão aqui -->
-            </ul>
-        </div>
-    </div>
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', `${sender}-message`);
+        messageElement.textContent = text;
+        chatWindow.appendChild(messageElement);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    };
+    
+    const toggleBotTyping = (isTyping) => {
+        isBotTyping = isTyping;
+        sendButton.disabled = isTyping;
+        messageInput.disabled = isTyping;
 
-    <script src="client.js"></script>
-</body>
-</html>
+        if (isTyping) {
+            const typingElement = document.createElement('div');
+            typingElement.classList.add('message', 'bot-message', 'typing-indicator');
+            typingElement.textContent = 'Digitando...';
+            chatWindow.appendChild(typingElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        } else {
+            const typingIndicator = chatWindow.querySelector('.bot-message:last-child.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (isBotTyping) return;
+        const userMessageText = messageInput.value.trim();
+        if (!userMessageText) return;
+
+        addMessageToUI(userMessageText, 'user');
+        localChatHistory.push({ role: 'user', text: userMessageText });
+
+        if (!currentConversationId) {
+            createNewConversation(userMessageText);
+        } else {
+            updateCurrentConversation();
+        }
+        
+        messageInput.value = '';
+        toggleBotTyping(true);
+
+        await processUserMessage(userMessageText);
+        
+        toggleBotTyping(false);
+        updateCurrentConversation();
+    };
+
+    const processUserMessage = async (messageText) => {
+        const normalizedMessage = messageText.toLowerCase().trim();
+        let botResponseText = '';
+
+        if (flashcardMode) {
+            if (normalizedMessage === 'proximo' || normalizedMessage === 'próximo') {
+                const card = getNextFlashcard();
+                botResponseText = card.pergunta;
+                currentFlashcard = card;
+            } else if (normalizedMessage === 'resposta') {
+                botResponseText = currentFlashcard ? `✅ Resposta: ${currentFlashcard.resposta}` : "Primeiro peça um 'próximo' flash card.";
+            } else if (normalizedMessage === 'sair') {
+                flashcardMode = false;
+                currentFlashcard = null;
+                botResponseText = "Ok, saímos do modo Flash Cards. Como posso te ajudar?";
+            } else {
+                botResponseText = "Comando inválido no modo Flash Cards. Digite 'próximo', 'resposta' ou 'sair'.";
+            }
+        } else {
+            if (normalizedMessage.includes('flashcard')) {
+                flashcardMode = true;
+                botResponseText = "🎯 Modo Flash Cards ativado! Digite 'próximo' para começar.";
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                botResponseText = `Entendi que você disse: "${messageText}". No momento, minha principal função são os flash cards. Tente digitar "flashcard".`;
+            }
+        }
+
+        addMessageToUI(botResponseText, 'bot');
+        localChatHistory.push({ role: 'bot', text: botResponseText });
+    };
+
+    const getNextFlashcard = () => {
+        const randomIndex = Math.floor(Math.random() * flashcards.length);
+        return flashcards[randomIndex];
+    };
+
+    // --- INICIALIZAÇÃO E EVENT LISTENERS ---
+
+    sendButton.addEventListener('click', handleSendMessage);
+    newChatButton.addEventListener('click', startNewChat);
+    messageInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            handleSendMessage();
+        }
+    });
+
+    loadAllConversations();
+    startNewChat();
+});
