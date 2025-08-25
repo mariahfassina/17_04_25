@@ -7,38 +7,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyList = document.getElementById('history-list');
 
     // --- VARIÁVEIS DE ESTADO ---
-    let localChatHistory = []; // Histórico da conversa ATUAL
-    let allConversations = []; // Array com TODAS as conversas salvas
+    let localChatHistory = [];
+    let allConversations = [];
     let currentConversationId = null;
-    let flashcardMode = false;
+    let chatState = 'initial'; // 'initial', 'selecting_theme', 'flashcard_mode'
+    let currentTheme = null;
     let currentFlashcard = null;
     let isBotTyping = false;
 
-    // --- SISTEMA DE FLASH CARDS (EXISTENTE) ---
-    const flashcards = [
-        { pergunta: "O que é JavaScript?", resposta: "JavaScript é uma linguagem de programação interpretada estruturada, de script em alto nível com tipagem dinâmica fraca e multiparadigma." },
-        { pergunta: "O que é HTML?", resposta: "HTML (HyperText Markup Language) é uma linguagem de marcação utilizada na construção de páginas na Web." },
-        { pergunta: "O que é CSS?", resposta: "CSS (Cascading Style Sheets) é um mecanismo para adicionar estilo a um documento web." },
-        { pergunta: "O que é uma função em programação?", resposta: "Uma função é um bloco de código que executa uma tarefa específica e pode ser reutilizado." },
-        { pergunta: "O que é um array?", resposta: "Um array é uma estrutura de dados que armazena uma coleção de elementos, geralmente do mesmo tipo." }
-    ];
-
-    // --- FUNÇÕES DE GERENCIAMENTO DE HISTÓRICO ---
-
+    // --- FUNÇÕES DE GERENCIAMENTO DE HISTÓRICO (sem alterações) ---
     const loadAllConversations = () => {
         const saved = localStorage.getItem('flashcard_chatbot_conversations');
-        if (saved) {
-            allConversations = JSON.parse(saved);
-        }
+        if (saved) allConversations = JSON.parse(saved);
         updateHistoryListUI();
     };
-
-    const saveAllConversations = () => {
-        localStorage.setItem('flashcard_chatbot_conversations', JSON.stringify(allConversations));
-    };
-
+    const saveAllConversations = () => localStorage.setItem('flashcard_chatbot_conversations', JSON.stringify(allConversations));
     const generateConversationId = () => `conv_${Date.now()}`;
-
     const createNewConversation = (firstMessageText) => {
         currentConversationId = generateConversationId();
         const newConversation = {
@@ -51,99 +35,76 @@ document.addEventListener('DOMContentLoaded', () => {
         saveAllConversations();
         updateHistoryListUI();
     };
-
     const updateCurrentConversation = () => {
         if (!currentConversationId) return;
-        const conversationIndex = allConversations.findIndex(conv => conv.id === currentConversationId);
-        if (conversationIndex !== -1) {
-            allConversations[conversationIndex].messages = [...localChatHistory];
-            allConversations[conversationIndex].timestamp = new Date().toISOString();
+        const convIndex = allConversations.findIndex(c => c.id === currentConversationId);
+        if (convIndex !== -1) {
+            allConversations[convIndex].messages = [...localChatHistory];
+            allConversations[convIndex].timestamp = new Date().toISOString();
             saveAllConversations();
         }
     };
-
     const loadConversation = (conversationId) => {
-        const conversation = allConversations.find(conv => conv.id === conversationId);
+        const conversation = allConversations.find(c => c.id === conversationId);
         if (!conversation) return;
-
         currentConversationId = conversationId;
         localChatHistory = [...conversation.messages];
-        
         chatWindow.innerHTML = '';
-        
-        localChatHistory.forEach(message => {
-            addMessageToUI(message.text, message.role === 'user' ? 'user' : 'bot');
-        });
-        
+        localChatHistory.forEach(msg => addMessageToUI(msg.text, msg.role));
+        chatState = 'initial';
+        currentTheme = null;
         updateHistoryListUI();
         messageInput.focus();
     };
-
     const updateHistoryListUI = () => {
         historyList.innerHTML = '';
         allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        allConversations.forEach(conversation => {
+        allConversations.forEach(conv => {
             const listItem = document.createElement('li');
             listItem.className = 'history-item';
-            listItem.textContent = conversation.title;
-            listItem.dataset.id = conversation.id;
-
-            if (conversation.id === currentConversationId) {
-                listItem.classList.add('active');
-            }
-            
-            listItem.addEventListener('click', () => {
-                loadConversation(conversation.id);
-            });
-            
+            listItem.textContent = conv.title;
+            listItem.dataset.id = conv.id;
+            if (conv.id === currentConversationId) listItem.classList.add('active');
+            listItem.addEventListener('click', () => loadConversation(conv.id));
             historyList.appendChild(listItem);
         });
     };
 
+    // --- FUNÇÕES DE LÓGICA DO CHAT (ATUALIZADAS) ---
     const startNewChat = () => {
         currentConversationId = null;
         localChatHistory = [];
-        flashcardMode = false;
-        currentFlashcard = null;
+        chatState = 'initial';
+        currentTheme = null;
         chatWindow.innerHTML = '';
-        addMessageToUI('Olá! Sou seu assistente com Flash Cards! 🎯', 'bot');
-        addMessageToUI('Digite "flashcard" para começar a estudar ou faça uma pergunta normal.', 'bot');
+        addMessageToUI('Olá! Sou seu assistente de estudos com Flash Cards! 🎯', 'bot');
+        addMessageToUI('Para começar, diga qual tema você quer estudar. Por exemplo: "Quero estudar a Segunda Guerra Mundial".', 'bot');
         updateHistoryListUI();
         messageInput.focus();
     };
 
-    // --- FUNÇÕES DE INTERFACE E LÓGICA DO CHAT ---
-
     const addMessageToUI = (text, sender) => {
-        const typingIndicator = chatWindow.querySelector('.bot-message:last-child.typing-indicator');
-        if (typingIndicator) {
-            typingIndicator.remove();
-        }
-
+        const typingIndicator = chatWindow.querySelector('.typing-indicator');
+        if (typingIndicator) typingIndicator.remove();
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
         messageElement.textContent = text;
         chatWindow.appendChild(messageElement);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     };
-    
+
     const toggleBotTyping = (isTyping) => {
         isBotTyping = isTyping;
         sendButton.disabled = isTyping;
         messageInput.disabled = isTyping;
-
+        const existingIndicator = chatWindow.querySelector('.typing-indicator');
+        if (existingIndicator) existingIndicator.remove();
         if (isTyping) {
             const typingElement = document.createElement('div');
             typingElement.classList.add('message', 'bot-message', 'typing-indicator');
             typingElement.textContent = 'Digitando...';
             chatWindow.appendChild(typingElement);
             chatWindow.scrollTop = chatWindow.scrollHeight;
-        } else {
-            const typingIndicator = chatWindow.querySelector('.bot-message:last-child.typing-indicator');
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
         }
     };
 
@@ -170,31 +131,46 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCurrentConversation();
     };
 
+    // ** A MÁGICA ACONTECE AQUI **
     const processUserMessage = async (messageText) => {
         const normalizedMessage = messageText.toLowerCase().trim();
         let botResponseText = '';
 
-        if (flashcardMode) {
+        await new Promise(resolve => setTimeout(resolve, 600)); // Simula o bot "pensando"
+
+        if (chatState === 'flashcard_mode') {
             if (normalizedMessage === 'proximo' || normalizedMessage === 'próximo') {
-                const card = getNextFlashcard();
-                botResponseText = card.pergunta;
-                currentFlashcard = card;
+                // Gera uma pergunta "falsa" usando o tema atual
+                currentFlashcard = generateFakeFlashcard(currentTheme);
+                botResponseText = currentFlashcard.pergunta;
             } else if (normalizedMessage === 'resposta') {
                 botResponseText = currentFlashcard ? `✅ Resposta: ${currentFlashcard.resposta}` : "Primeiro peça um 'próximo' flash card.";
-            } else if (normalizedMessage === 'sair') {
-                flashcardMode = false;
-                currentFlashcard = null;
-                botResponseText = "Ok, saímos do modo Flash Cards. Como posso te ajudar?";
+            } else if (normalizedMessage.includes('sair') || normalizedMessage.includes('mudar tema')) {
+                chatState = 'initial';
+                botResponseText = `Ok, finalizamos o tema "${currentTheme}". Sobre o que você quer estudar agora?`;
+                currentTheme = null;
             } else {
-                botResponseText = "Comando inválido no modo Flash Cards. Digite 'próximo', 'resposta' ou 'sair'.";
+                botResponseText = `Estamos no modo de estudo sobre "${currentTheme}". Digite 'próximo', 'resposta' ou 'sair'.`;
             }
-        } else {
-            if (normalizedMessage.includes('flashcard')) {
-                flashcardMode = true;
-                botResponseText = "🎯 Modo Flash Cards ativado! Digite 'próximo' para começar.";
+        } else { // chatState === 'initial' ou 'selecting_theme'
+            // Detecta a intenção de estudar e extrai o tema
+            const studyKeywords = ['estudar', 'flashcard', 'sobre', 'quero aprender', 'me ensine'];
+            const wantsToStudy = studyKeywords.some(keyword => normalizedMessage.includes(keyword));
+
+            if (wantsToStudy) {
+                // Remove as palavras-chave para "isolar" o tema
+                let theme = normalizedMessage;
+                studyKeywords.forEach(keyword => {
+                    theme = theme.replace(keyword, '');
+                });
+                theme = theme.replace(/ a | o | de | da | do | os | as /g, ' ').trim(); // Remove artigos e preposições
+                
+                // Capitaliza o tema para ficar mais bonito
+                currentTheme = theme.charAt(0).toUpperCase() + theme.slice(1);
+                chatState = 'flashcard_mode';
+                botResponseText = `Entendido! Vamos começar a estudar sobre "${currentTheme}". Digite 'próximo' para o primeiro flash card!`;
             } else {
-                await new Promise(resolve => setTimeout(resolve, 800));
-                botResponseText = `Entendi que você disse: "${messageText}". No momento, minha principal função são os flash cards. Tente digitar "flashcard".`;
+                botResponseText = `Não entendi muito bem. Para começarmos, me diga qual tema você quer estudar. Por exemplo: "Quero flashcards de biologia".`;
             }
         }
 
@@ -202,13 +178,32 @@ document.addEventListener('DOMContentLoaded', () => {
         localChatHistory.push({ role: 'bot', text: botResponseText });
     };
 
-    const getNextFlashcard = () => {
-        const randomIndex = Math.floor(Math.random() * flashcards.length);
-        return flashcards[randomIndex];
+    // Função que cria flashcards genéricos que parecem específicos
+    const generateFakeFlashcard = (theme) => {
+        const questionsTemplates = [
+            `Qual é a definição principal de ${theme}?`,
+            `Cite um conceito chave relacionado a ${theme}.`,
+            `Qual a importância histórica de ${theme}?`,
+            `Quem foi a figura mais influente em ${theme}?`,
+            `Descreva o processo fundamental de ${theme}.`
+        ];
+        const answersTemplates = [
+            `É o conceito central que define ${theme} e suas aplicações.`,
+            `Um dos pilares de ${theme}, essencial para seu entendimento.`,
+            `Este evento/descoberta em ${theme} mudou o curso da história.`,
+            `Uma personalidade cujo trabalho foi fundamental para o desenvolvimento de ${theme}.`,
+            `O processo envolve uma série de etapas críticas para o resultado de ${theme}.`
+        ];
+
+        const randomIndex = Math.floor(Math.random() * questionsTemplates.length);
+        
+        return {
+            pergunta: questionsTemplates[randomIndex],
+            resposta: answersTemplates[randomIndex]
+        };
     };
 
     // --- INICIALIZAÇÃO E EVENT LISTENERS ---
-
     sendButton.addEventListener('click', handleSendMessage);
     newChatButton.addEventListener('click', startNewChat);
     messageInput.addEventListener('keypress', (event) => {
@@ -219,5 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loadAllConversations();
-    startNewChat();
+    if (allConversations.length === 0) {
+        startNewChat();
+    } else {
+        loadConversation(allConversations[0].id);
+    }
 });
