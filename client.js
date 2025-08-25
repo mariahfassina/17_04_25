@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-
-    const API_BASE_URL = 'https://one7-04-25backend.onrender.com'; // IMPORTANTE: Ajuste se necessário
+    // --- CONFIGURAÇÃO PRINCIPAL ---
+    // IMPORTANTE: Coloque aqui a URL do seu backend publicado no Render
+    const API_BASE_URL = 'https://one7-04-25backend.onrender.com';
 
     // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
     const chatWindow = document.getElementById('chat-window' );
@@ -14,27 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let allConversations = [];
     let currentConversationId = null;
     let isBotTyping = false;
+    let chatState = 'waiting_for_topic'; // 'waiting_for_topic', 'waiting_for_answer'
 
     // --- FUNÇÕES DE GERENCIAMENTO DE HISTÓRICO (localStorage) ---
     const loadAllConversations = () => {
-        const saved = localStorage.getItem('gemini_chatbot_conversations');
-        if (saved) {
-            allConversations = JSON.parse(saved);
-        }
+        const saved = localStorage.getItem('gemini_flashcard_conversations_v2');
+        if (saved) allConversations = JSON.parse(saved);
         updateHistoryListUI();
     };
-
-    const saveAllConversations = () => {
-        localStorage.setItem('gemini_chatbot_conversations', JSON.stringify(allConversations));
-    };
-
+    const saveAllConversations = () => localStorage.setItem('gemini_flashcard_conversations_v2', JSON.stringify(allConversations));
     const generateConversationId = () => `conv_${Date.now()}`;
-
     const createNewConversation = (firstMessageText) => {
         currentConversationId = generateConversationId();
         const newConversation = {
             id: currentConversationId,
-            // Usa o próprio texto do usuário como título inicial
             title: firstMessageText.substring(0, 40) + (firstMessageText.length > 40 ? '...' : ''),
             messages: [...localChatHistory],
             timestamp: new Date().toISOString()
@@ -43,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveAllConversations();
         updateHistoryListUI();
     };
-
     const updateCurrentConversation = () => {
         if (!currentConversationId) return;
         const convIndex = allConversations.findIndex(c => c.id === currentConversationId);
@@ -53,44 +46,39 @@ document.addEventListener('DOMContentLoaded', () => {
             saveAllConversations();
         }
     };
-
     const loadConversation = (conversationId) => {
         const conversation = allConversations.find(c => c.id === conversationId);
         if (!conversation) return;
-
         currentConversationId = conversationId;
         localChatHistory = [...conversation.messages];
-        
         chatWindow.innerHTML = '';
         localChatHistory.forEach(msg => addMessageToUI(msg.text, msg.role));
-        
+        chatState = 'waiting_for_topic'; // Reinicia o fluxo ao carregar
         updateHistoryListUI();
         messageInput.focus();
     };
-
     const updateHistoryListUI = () => {
         historyList.innerHTML = '';
-        // Ordena por data para mostrar os mais recentes primeiro
         allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         allConversations.forEach(conv => {
             const listItem = document.createElement('li');
             listItem.className = 'history-item';
             listItem.textContent = conv.title;
             listItem.dataset.id = conv.id;
-            if (conv.id === currentConversationId) {
-                listItem.classList.add('active');
-            }
+            if (conv.id === currentConversationId) listItem.classList.add('active');
             listItem.addEventListener('click', () => loadConversation(conv.id));
             historyList.appendChild(listItem);
         });
     };
 
-    // --- FUNÇÕES DE LÓGICA DO CHAT (AGORA CONECTADO AO BACKEND) ---
+    // --- FUNÇÕES DE LÓGICA DO CHAT ---
     const startNewChat = () => {
         currentConversationId = null;
         localChatHistory = [];
         chatWindow.innerHTML = '';
-        addMessageToUI('Olá! Sou seu assistente de estudos. Pode perguntar sobre qualquer tema!', 'bot');
+        // ** NOVA MENSAGEM DE BOAS-VINDAS **
+        addMessageToUI('Olá! 👋 Sou seu assistente de estudos e posso criar flash cards sobre qualquer assunto. Qual tema você gostaria de aprender hoje?', 'bot');
+        chatState = 'waiting_for_topic';
         updateHistoryListUI();
         messageInput.focus();
     };
@@ -98,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const addMessageToUI = (text, sender) => {
         const typingIndicator = chatWindow.querySelector('.typing-indicator');
         if (typingIndicator) typingIndicator.remove();
-
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
         messageElement.textContent = text;
@@ -110,14 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
         isBotTyping = isTyping;
         sendButton.disabled = isTyping;
         messageInput.disabled = isTyping;
-
         const existingIndicator = chatWindow.querySelector('.typing-indicator');
         if (existingIndicator) existingIndicator.remove();
-
         if (isTyping) {
             const typingElement = document.createElement('div');
             typingElement.classList.add('message', 'bot-message', 'typing-indicator');
-            typingElement.textContent = 'Pensando...';
+            typingElement.textContent = 'Criando flash card...';
             chatWindow.appendChild(typingElement);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
@@ -128,11 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const userMessageText = messageInput.value.trim();
         if (!userMessageText) return;
 
-        // Adiciona a mensagem do usuário na UI e no histórico local
         addMessageToUI(userMessageText, 'user');
-        localChatHistory.push({ role: 'user', text: userMessageText });
+        localChatHistory.push({ role: 'user', parts: [{ text: userMessageText }] });
 
-        // Cria uma nova conversa se for a primeira mensagem
         if (!currentConversationId) {
             createNewConversation(userMessageText);
         } else {
@@ -143,34 +126,45 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleBotTyping(true);
 
         try {
-            // ** A CHAMADA REAL PARA O SEU BACKEND ACONTECE AQUI **
+            // Envia o histórico para o Gemini ter contexto
+            const historyForApi = localChatHistory.slice(0, -1).map(msg => ({
+                role: msg.role,
+                parts: msg.parts
+            }));
+
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                // Envia a mensagem do usuário no corpo da requisição
-                body: JSON.stringify({ message: userMessageText }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: userMessageText,
+                    history: historyForApi 
+                }),
             });
 
             if (!response.ok) {
-                // Se o servidor retornar um erro, exibe uma mensagem amigável
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Falha na comunicação com o servidor.');
             }
 
             const data = await response.json();
-            const botResponseText = data.response; // Pega a resposta real do Gemini
+            const botResponseText = data.response;
 
-            // Adiciona a resposta do bot na UI e no histórico local
             addMessageToUI(botResponseText, 'bot');
-            localChatHistory.push({ role: 'bot', text: botResponseText });
+            localChatHistory.push({ role: 'model', parts: [{ text: botResponseText }] });
+
+            // ** LÓGICA PARA O FLUXO DE DUAS ETAPAS **
+            if (botResponseText.includes('❓')) { // Se o bot enviou uma pergunta
+                addMessageToUI("Digite 'resposta' para visualizar a resposta.", 'bot');
+                localChatHistory.push({ role: 'model', parts: [{ text: "Digite 'resposta' para visualizar a resposta." }] });
+                chatState = 'waiting_for_answer';
+            } else { // Se o bot enviou uma resposta
+                chatState = 'waiting_for_topic';
+            }
 
         } catch (error) {
             console.error('Erro ao enviar mensagem:', error);
             addMessageToUI(`Desculpe, ocorreu um erro: ${error.message}`, 'bot');
         } finally {
-            // Para o indicador de "Pensando..." e salva o estado final da conversa
             toggleBotTyping(false);
             updateCurrentConversation();
         }
@@ -186,12 +180,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Carrega as conversas salvas no localStorage ao iniciar
     loadAllConversations();
     if (allConversations.length === 0) {
         startNewChat();
     } else {
-        // Carrega a conversa mais recente
         loadConversation(allConversations[0].id);
     }
 });
