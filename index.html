@@ -5,17 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot Flash Cards</title>
     <style>
-        /* SEU CSS ORIGINAL - RESTAURADO */
+        /* SEU CSS ORIGINAL + NOVAS ADIÇÕES */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --background-color: #f0f2f5;
+            --container-bg: white;
+            --text-color: #333;
+            --border-color: #eee;
+        }
+
         body { 
-            font-family: sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             display: flex; 
             justify-content: center; 
             align-items: center; 
             min-height: 100vh; 
             margin: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            box-sizing: border-box; /* Garante que o padding não quebre o layout */
+            background: var(--background-color);
+            overflow: hidden; /* Previne scroll do body */
         }
         
         .main-container {
@@ -23,38 +30,39 @@
             gap: 20px;
             width: 100%;
             max-width: 1200px;
-            height: 90vh; /* Ajustado para melhor visualização */
+            height: 95vh;
+            max-height: 800px;
         }
         
         #chat-container { 
-            flex: 3; /* Dando mais espaço para o chat */
-            border: 1px solid #ccc; 
+            flex: 3;
             border-radius: 12px; 
             display: flex; 
             flex-direction: column; 
-            background-color: white; 
+            background-color: var(--container-bg); 
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            position: relative; /* Necessário para o rodapé */
+            position: relative;
         }
         
         #chat-window { 
             flex-grow: 1; 
             padding: 20px; 
             overflow-y: auto; 
-            display: flex; /* Adicionado para alinhar mensagens */
-            flex-direction: column; /* Adicionado para alinhar mensagens */
+            display: flex;
+            flex-direction: column;
         }
         
         .message { 
             margin-bottom: 15px; 
             padding: 12px 16px; 
             border-radius: 18px; 
-            max-width: 80%; 
+            max-width: 85%; 
             word-wrap: break-word;
+            line-height: 1.5;
         }
         
         .user-message { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
             align-self: flex-end; 
             margin-left: auto; 
@@ -63,16 +71,16 @@
         
         .bot-message { 
             background-color: #f1f3f4; 
-            color: #333;
+            color: var(--text-color);
             align-self: flex-start; 
             border-bottom-left-radius: 4px;
         }
         
         #input-container { 
             display: flex; 
-            padding: 20px; 
+            padding: 15px; 
             background-color: #f8f9fa;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--border-color);
         }
         
         #message-input { 
@@ -81,46 +89,35 @@
             border: 2px solid #e9ecef; 
             border-radius: 25px; 
             outline: none; 
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-        
-        #message-input:focus {
-            border-color: #667eea;
+            font-size: 16px;
         }
         
         #send-button { 
             padding: 12px 24px; 
-            margin-left: 12px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-left: 10px; 
+            background: var(--primary-gradient);
             color: white; 
             border: none; 
             border-radius: 25px; 
             cursor: pointer; 
             font-weight: 600;
-            transition: transform 0.2s ease;
-        }
-        
-        #send-button:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
-        /* ADIÇÕES MÍNIMAS PARA O HISTÓRICO */
         #history-container {
-            flex: 1; /* Ocupa menos espaço */
-            background-color: white;
+            flex: 1;
+            background-color: var(--container-bg);
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
         }
         
         #history-container h3 {
             margin-top: 0;
-            color: #333;
+            color: var(--text-color);
             border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
         }
@@ -134,9 +131,6 @@
             cursor: pointer;
             margin-bottom: 15px;
             text-align: center;
-        }
-        #new-chat-btn:hover {
-            background-color: #e9ecef;
         }
         
         #history-list {
@@ -154,13 +148,15 @@
             border-left: 4px solid #667eea;
             cursor: pointer;
             font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .history-item.active {
-            background-color: #e9d5ff; /* Um lilás claro para combinar */
+            background-color: #e9d5ff;
             font-weight: bold;
         }
 
-        /* ** NOVO ESTILO PARA O RODAPÉ ** */
         .footer {
             padding: 8px;
             text-align: center;
@@ -170,28 +166,72 @@
             border-bottom-left-radius: 12px;
             border-bottom-right-radius: 12px;
         }
-        
+
+        /* ** ESTILOS PARA O MENU HAMBÚRGUER ** */
+        #menu-toggle {
+            display: none; /* Escondido em telas grandes */
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            background: #f1f3f4;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 24px;
+            line-height: 40px;
+            text-align: center;
+        }
+
+        /* ** MEDIA QUERIES PARA RESPONSIVIDADE ** */
         @media (max-width: 768px) {
+            body {
+                padding: 0;
+                align-items: flex-start; /* Alinha no topo */
+            }
             .main-container {
                 flex-direction: column;
-                height: auto;
-                padding: 10px;
-            }
-            #history-container {
-                order: -1; /* Coloca o histórico no topo em telas pequenas */
-                max-height: 200px;
-                margin-bottom: 10px;
+                height: 100vh; /* Ocupa a tela toda */
+                max-height: none;
+                gap: 0;
+                position: relative; /* Contexto para o painel de histórico */
             }
             #chat-container {
-                height: 70vh;
+                border-radius: 0;
+                height: 100%;
+            }
+            #menu-toggle {
+                display: block; /* Mostra o botão em telas pequenas */
+            }
+            #history-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 280px; /* Largura do menu lateral */
+                height: 100%;
+                border-radius: 0;
+                z-index: 5;
+                transform: translateX(-100%); /* Começa escondido fora da tela */
+                box-shadow: 5px 0px 15px rgba(0,0,0,0.2);
+            }
+            #history-container.show {
+                transform: translateX(0); /* Mostra o menu deslizando para dentro */
+            }
+            #chat-window {
+                padding-top: 70px; /* Espaço para o botão de menu não sobrepor o conteúdo */
             }
         }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <!-- Container do Chat (agora à esquerda) -->
+        <!-- Container do Chat -->
         <div id="chat-container">
+            <!-- ** BOTÃO HAMBÚRGUER ADICIONADO ** -->
+            <button id="menu-toggle">☰</button>
+
             <div id="chat-window">
                 <!-- As mensagens aparecerão aqui -->
             </div>
@@ -199,13 +239,12 @@
                 <input type="text" id="message-input" placeholder="Digite um tema para estudar...">
                 <button id="send-button">Enviar</button>
             </div>
-            <!-- ** RODAPÉ ADICIONADO ** -->
             <div class="footer">
                 Desenvolvido por Mariáh
             </div>
         </div>
         
-        <!-- Container do Histórico (à direita) -->
+        <!-- Container do Histórico -->
         <div id="history-container">
             <h3>📚 Histórico</h3>
             <button id="new-chat-btn">➕ Nova Conversa</button>
