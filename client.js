@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CONFIGURAÇÃO PRINCIPAL ---
-    // Se o seu backend estiver rodando em outro lugar, mude esta URL.
-    // Se estiver testando localmente, use 'http://localhost:3000'.
-    const API_BASE_URL = 'http://localhost:3000'; // IMPORTANTE: Ajuste se necessário
+
+    const API_BASE_URL = 'https://one7-04-25backend.onrender.com'; // IMPORTANTE: Ajuste se necessário
 
     // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
     const chatWindow = document.getElementById('chat-window' );
