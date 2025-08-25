@@ -3,192 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Flash Cards</title>
+    <title>Chatbot Flash Cards com Histórico</title>
     <style>
-        body { 
-            font-family: sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
+        /* Estilos Gerais */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #1c1e21;
         }
-        
+
+        /* Container Principal */
         .main-container {
             display: flex;
-            gap: 20px;
             width: 100%;
-            max-width: 1200px;
-            height: 80vh;
+            height: 100%;
         }
-        
-        #chat-container { 
-            flex: 2;
-            border: 1px solid #ccc; 
-            border-radius: 12px; 
-            display: flex; 
-            flex-direction: column; 
-            background-color: white; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+
+        /* Barra Lateral de Histórico */
+        #history-sidebar {
+            display: flex;
+            flex-direction: column;
+            width: 280px;
+            background-color: #1e293b; /* Azul escuro */
+            color: #e2e8f0; /* Texto claro */
+            padding: 12px;
+            border-right: 1px solid #334155;
+            transition: width 0.3s ease;
         }
-        
-        #historicos-container {
-            flex: 1;
-            background-color: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            overflow-y: auto;
+
+        #new-chat-btn {
+            background-color: #3b82f6; /* Azul vibrante */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+            text-align: center;
+            transition: background-color 0.2s ease;
         }
-        
-        #historicos-container h3 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
+
+        #new-chat-btn:hover {
+            background-color: #2563eb;
         }
-        
-        #historicos-list {
+
+        #history-list {
             list-style: none;
             padding: 0;
             margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
         }
-        
-        #historicos-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
+
+        .history-item {
+            padding: 12px;
+            border-radius: 6px;
             margin-bottom: 8px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .historico-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .historico-actions button {
-            background: none;
-            border: none;
             cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            font-size: 16px;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
-        .historico-actions button:hover {
-            background-color: #e9ecef;
+
+        .history-item:hover {
+            background-color: #334155; /* Azul mais escuro */
         }
-        
-        #chat-window { 
-            flex-grow: 1; 
-            padding: 20px; 
-            overflow-y: auto; 
-            border-bottom: 1px solid #eee; 
+
+        .history-item.active {
+            background-color: #475569; /* Cinza-azulado */
+            font-weight: bold;
         }
-        
-        .message { 
-            margin-bottom: 15px; 
-            padding: 12px 16px; 
-            border-radius: 18px; 
-            max-width: 80%; 
+
+        /* Container do Chat */
+        #chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Mensagens */
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 20px;
+            max-width: 75%;
             word-wrap: break-word;
+            line-height: 1.5;
         }
-        
-        .user-message { 
+
+        .user-message {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            align-self: flex-end; 
-            margin-left: auto; 
-            border-bottom-right-radius: 4px;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
         }
-        
-        .bot-message { 
-            background-color: #f1f3f4; 
+
+        .bot-message {
+            background-color: #f1f3f4;
             color: #333;
-            align-self: flex-start; 
-            border-bottom-left-radius: 4px;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
         }
         
-        #input-container { 
-            display: flex; 
-            padding: 20px; 
+        .typing-indicator {
+            align-self: flex-start;
+            color: #888;
+            font-style: italic;
+        }
+
+        /* Container de Input */
+        #input-container {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
             background-color: #f8f9fa;
-            border-radius: 0 0 12px 12px;
         }
-        
-        #message-input { 
-            flex-grow: 1; 
-            padding: 12px 16px; 
-            border: 2px solid #e9ecef; 
-            border-radius: 25px; 
-            outline: none; 
-            font-size: 14px;
+
+        #message-input {
+            flex-grow: 1;
+            padding: 14px 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            outline: none;
+            font-size: 16px;
             transition: border-color 0.3s ease;
         }
-        
+
         #message-input:focus {
             border-color: #667eea;
         }
-        
-        #send-button { 
-            padding: 12px 24px; 
-            margin-left: 12px; 
+
+        #send-button {
+            padding: 0 24px;
+            margin-left: 12px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            border: none; 
-            border-radius: 25px; 
-            cursor: pointer; 
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
             font-weight: 600;
-            transition: transform 0.2s ease;
+            font-size: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
-        #send-button:hover { 
+
+        #send-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
-        .flash-card-mode {
-            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%) !important;
+        #send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        
+
+        /* Responsividade */
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
-                height: auto;
             }
-            
-            #historicos-container {
-                order: -1;
-                max-height: 200px;
+            #history-sidebar {
+                width: 100%;
+                height: 200px; /* Altura fixa para o histórico no mobile */
+                border-right: none;
+                border-bottom: 1px solid #334155;
             }
         }
     </style>
 </head>
 <body>
     <div class="main-container">
+        <!-- Barra Lateral de Histórico -->
+        <div id="history-sidebar">
+            <button id="new-chat-btn">➕ Nova Conversa</button>
+            <ul id="history-list">
+                <!-- Histórico de conversas será carregado aqui -->
+            </ul>
+        </div>
+
+        <!-- Container Principal do Chat -->
         <div id="chat-container">
             <div id="chat-window">
-                <!-- As mensagens aparecerão aqui -->
+                <!-- Mensagens do chat aparecerão aqui -->
             </div>
             <div id="input-container">
                 <input type="text" id="message-input" placeholder="Digite sua mensagem ou 'flashcard' para estudar...">
                 <button id="send-button">Enviar</button>
             </div>
-        </div>
-        
-        <div id="historicos-container">
-            <h3>📚 Histórico de Conversas</h3>
-            <ul id="historicos-list">
-                <!-- Os históricos aparecerão aqui -->
-            </ul>
         </div>
     </div>
 
