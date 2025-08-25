@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURAÇÃO PRINCIPAL ---
-    // IMPORTANTE: Coloque aqui a URL do seu backend publicado no Render
     const API_BASE_URL = 'https://one7-04-25backend.onrender.com';
 
     // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
@@ -9,13 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const newChatButton = document.getElementById('new-chat-btn');
     const historyList = document.getElementById('history-list');
+    const menuToggleButton = document.getElementById('menu-toggle'); // Botão do menu
+    const historyContainer = document.getElementById('history-container'); // Painel do histórico
 
     // --- VARIÁVEIS DE ESTADO ---
     let localChatHistory = [];
     let allConversations = [];
     let currentConversationId = null;
     let isBotTyping = false;
-    let chatState = 'waiting_for_topic'; // 'waiting_for_topic', 'waiting_for_answer'
 
     // --- FUNÇÕES DE GERENCIAMENTO DE HISTÓRICO (localStorage) ---
     const loadAllConversations = () => {
@@ -53,9 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localChatHistory = [...conversation.messages];
         chatWindow.innerHTML = '';
         localChatHistory.forEach(msg => addMessageToUI(msg.text, msg.role));
-        chatState = 'waiting_for_topic'; // Reinicia o fluxo ao carregar
         updateHistoryListUI();
         messageInput.focus();
+        // Esconde o menu após selecionar uma conversa em telas pequenas
+        if (window.innerWidth <= 768) {
+            historyContainer.classList.remove('show');
+        }
     };
     const updateHistoryListUI = () => {
         historyList.innerHTML = '';
@@ -76,11 +79,13 @@ document.addEventListener('DOMContentLoaded', () => {
         currentConversationId = null;
         localChatHistory = [];
         chatWindow.innerHTML = '';
-        // ** NOVA MENSAGEM DE BOAS-VINDAS **
         addMessageToUI('Olá! 👋 Sou seu assistente de estudos e posso criar flash cards sobre qualquer assunto. Qual tema você gostaria de aprender hoje?', 'bot');
-        chatState = 'waiting_for_topic';
         updateHistoryListUI();
         messageInput.focus();
+        // Esconde o menu ao iniciar novo chat em telas pequenas
+        if (window.innerWidth <= 768) {
+            historyContainer.classList.remove('show');
+        }
     };
 
     const addMessageToUI = (text, sender) => {
@@ -126,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleBotTyping(true);
 
         try {
-            // Envia o histórico para o Gemini ter contexto
             const historyForApi = localChatHistory.slice(0, -1).map(msg => ({
                 role: msg.role,
                 parts: msg.parts
@@ -152,13 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
             addMessageToUI(botResponseText, 'bot');
             localChatHistory.push({ role: 'model', parts: [{ text: botResponseText }] });
 
-            // ** LÓGICA PARA O FLUXO DE DUAS ETAPAS **
-            if (botResponseText.includes('❓')) { // Se o bot enviou uma pergunta
+            if (botResponseText.includes('❓')) {
                 addMessageToUI("Digite 'resposta' para visualizar a resposta.", 'bot');
                 localChatHistory.push({ role: 'model', parts: [{ text: "Digite 'resposta' para visualizar a resposta." }] });
-                chatState = 'waiting_for_answer';
-            } else { // Se o bot enviou uma resposta
-                chatState = 'waiting_for_topic';
             }
 
         } catch (error) {
@@ -178,6 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             handleSendMessage();
         }
+    });
+
+    // ** LÓGICA PARA O BOTÃO DO MENU HAMBÚRGUER **
+    menuToggleButton.addEventListener('click', () => {
+        historyContainer.classList.toggle('show');
     });
 
     loadAllConversations();
