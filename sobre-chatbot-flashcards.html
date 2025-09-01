@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sobre o ChatBot Flash Cards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .ai-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .ai-icon::before {
+            content: "🤖";
+            font-size: 40px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .content-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .content-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .section-text {
+            color: #555;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .credits {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .credits::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .credits-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .credits h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .credits p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .back-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .content-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="ai-icon"></div>
+            <h1>Sobre o ChatBot Flash Cards</h1>
+            <p class="subtitle">Seu assistente inteligente para aprender de forma rápida e eficaz!</p>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">
+                <div class="section-icon">🧠</div>
+                O que é o ChatBot Flash Cards?
+            </h2>
+            <p class="section-text">
+                O <span class="highlight">ChatBot Flash Cards</span> é uma ferramenta inovadora que utiliza Inteligência Artificial para transformar a maneira como você estuda. Ele cria <span class="highlight">flashcards personalizados</span> a partir de qualquer tema que você desejar, ajudando a memorizar e revisar conteúdos de forma dinâmica e interativa.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">
+                <div class="section-icon">📚</div>
+                Como Ele Pode Ajudar Você?
+            </h2>
+            <p class="section-text">
+                Com o ChatBot Flash Cards, você pode:
+                <ul>
+                    <li>Gerar flashcards sobre <span class="highlight">qualquer assunto</span>, desde história até programação.</li>
+                    <li>Revisar conceitos-chave de forma <span class="highlight">rápida e eficiente</span>.</li>
+                    <li>Personalizar seu aprendizado, focando nos tópicos que você mais precisa.</li>
+                    <li>Ter um <span class="highlight">assistente de estudos</span> disponível 24/7, a qualquer hora e em qualquer lugar.</li>
+                </ul>
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title">
+                <div class="section-icon">🚀</div>
+                Tecnologia por Trás
+            </h2>
+            <p class="section-text">
+                Este chatbot é alimentado por <span class="highlight">Inteligência Artificial</span> e <span class="highlight">Processamento de Linguagem Natural (PLN)</span>. Isso significa que ele consegue entender suas perguntas, analisar o conteúdo e gerar flashcards relevantes e de alta qualidade, tornando seu estudo mais inteligente e produtivo.
+            </p>
+        </div>
+
+        <div class="credits">
+            <div class="credits-content">
+                <h3>💜 Desenvolvido com Paixão</h3>
+                <p>
+                    Este projeto foi criado por <strong>Mariah Fassina</strong><br>
+                    Técnico em Informática para Internet - 2023<br>
+                    Combinando tecnologia e educação para um futuro melhor
+                </p>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="javascript:history.back()" class="back-button">← Voltar ao Chatbot</a>
+        </div>
+    </div>
+
+    <script>
+        // Adiciona efeitos de interação
+        document.querySelectorAll(".content-section").forEach(section => {
+            section.addEventListener("mouseenter", function() {
+                this.style.borderLeftColor = "#764ba2";
+            });
+            
+            section.addEventListener("mouseleave", function() {
+                this.style.borderLeftColor = "#667eea";
+            });
+        });
+
+        // Animação de entrada para as seções
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = "1";
+                    entry.target.style.transform = "translateY(0)";
+                }
+            });
+        });
+
+        document.querySelectorAll(".content-section").forEach(section => {
+            section.style.opacity = "0";
+            section.style.transform = "translateY(20px)";
+            section.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>
+
