@@ -165,6 +165,28 @@
             background-color: #f8f9fa;
             border-bottom-left-radius: 12px;
             border-bottom-right-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* NOVO: Botão "Sobre o ChatBot" */
+        #about-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        #about-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         /* ** ESTILOS PARA O MENU HAMBÚRGUER ** */
@@ -222,6 +244,217 @@
             #chat-window {
                 padding-top: 70px; /* Espaço para o botão de menu não sobrepor o conteúdo */
             }
+            .footer {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        /* ESTILOS DO MODAL */
+        .modal {
+            display: none; /* Escondido por padrão */
+            position: fixed; /* Fica por cima de tudo */
+            z-index: 1000; /* Z-index alto para garantir que fique na frente */
+            left: 0;
+            top: 0;
+            width: 100%; /* Largura total */
+            height: 100%; /* Altura total */
+            overflow: auto; /* Habilita scroll se o conteúdo for muito grande */
+            background-color: rgba(0,0,0,0.6); /* Fundo escuro semi-transparente */
+            align-items: center; /* Centraliza verticalmente */
+            justify-content: center; /* Centraliza horizontalmente */
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #f0f2f5 0%, #e0e2e5 100%); /* Fundo claro para o modal */
+            margin: auto; /* Centraliza o modal */
+            padding: 40px; /* Espaçamento interno */
+            border-radius: 20px; /* Bordas arredondadas */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); /* Sombra para destaque */
+            max-width: 800px; /* Largura máxima */
+            width: 90%; /* Largura responsiva */
+            position: relative; /* Para o botão de fechar */
+            animation: slideIn 0.4s ease-out;
+            max-height: 90vh; /* Altura máxima para o conteúdo do modal */
+            overflow-y: auto; /* Scroll interno se o conteúdo for grande */
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 36px;
+            font-weight: bold;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Estilos do Conteúdo do Modal */
+        .modal .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .modal .ai-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .modal .ai-icon::before {
+            content: "🤖";
+            font-size: 40px;
+        }
+
+        .modal h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal .subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .modal .content-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .modal .content-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal .section-title {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal .section-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .modal .section-text {
+            color: #555;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .modal .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .modal .credits {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal .credits::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .modal .credits-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal .credits h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .modal .credits p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Media Queries para o Modal */
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+            .modal h1 {
+                font-size: 2rem;
+            }
+            .modal .content-section {
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -240,9 +473,9 @@
                 <button id="send-button">Enviar</button>
             </div>
             <div class="footer">
-    Desenvolvido por Mariáh | <a href="sobre-chatbot-flashcards.html" target="_blank" style="color: #aaa; text-decoration: none;">Sobre o ChatBot</a>
-</div>
-
+                <span>Desenvolvido por Mariáh</span>
+                <button id="about-btn">🤖 Sobre o ChatBot</button>
+            </div>
         </div>
         
         <!-- Container do Histórico -->
@@ -252,6 +485,65 @@
             <ul id="history-list">
                 <!-- Os históricos aparecerão aqui -->
             </ul>
+        </div>
+    </div>
+
+    <!-- MODAL SOBRE O CHATBOT -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="header">
+                <div class="ai-icon"></div>
+                <h1>Sobre o ChatBot Flash Cards</h1>
+                <p class="subtitle">Seu assistente inteligente para aprender de forma rápida e eficaz!</p>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">
+                    <div class="section-icon">🧠</div>
+                    O que é o ChatBot Flash Cards?
+                </h2>
+                <p class="section-text">
+                    O <span class="highlight">ChatBot Flash Cards</span> é uma ferramenta inovadora que utiliza Inteligência Artificial para transformar a maneira como você estuda. Ele cria <span class="highlight">flashcards personalizados</span> a partir de qualquer tema que você desejar, ajudando a memorizar e revisar conteúdos de forma dinâmica e interativa.
+                </p>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">
+                    <div class="section-icon">📚</div>
+                    Como Ele Pode Ajudar Você?
+                </h2>
+                <p class="section-text">
+                    Com o ChatBot Flash Cards, você pode:
+                    <ul>
+                        <li>Gerar flashcards sobre <span class="highlight">qualquer assunto</span>, desde história até programação.</li>
+                        <li>Revisar conceitos-chave de forma <span class="highlight">rápida e eficiente</span>.</li>
+                        <li>Personalizar seu aprendizado, focando nos tópicos que você mais precisa.</li>
+                        <li>Ter um <span class="highlight">assistente de estudos</span> disponível 24/7, a qualquer hora e em qualquer lugar.</li>
+                    </ul>
+                </p>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">
+                    <div class="section-icon">🚀</div>
+                    Tecnologia por Trás
+                </h2>
+                <p class="section-text">
+                    Este chatbot é alimentado por <span class="highlight">Inteligência Artificial</span> e <span class="highlight">Processamento de Linguagem Natural (PLN)</span>. Isso significa que ele consegue entender suas perguntas, analisar o conteúdo e gerar flashcards relevantes e de alta qualidade, tornando seu estudo mais inteligente e produtivo.
+                </p>
+            </div>
+
+            <div class="credits">
+                <div class="credits-content">
+                    <h3>💜 Desenvolvido com Paixão</h3>
+                    <p>
+                        Este projeto foi criado por <strong>Mariah Fassina</strong><br>
+                        Técnico em Informática para Internet - 2023<br>
+                        Combinando tecnologia e educação para um futuro melhor
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
