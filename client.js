@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuToggleButton = document.getElementById('menu-toggle'); // Botão do menu
     const historyContainer = document.getElementById('history-container'); // Painel do histórico
 
+    // --- REFERÊNCIAS AOS ELEMENTOS DO MODAL ---
+    const aboutButton = document.getElementById('about-btn'); // Botão "Sobre o ChatBot"
+    const aboutModal = document.getElementById('aboutModal'); // Modal
+    const closeButton = document.querySelector('.close-button'); // Botão de fechar (X)
+
     // --- VARIÁVEIS DE ESTADO ---
     let localChatHistory = [];
     let allConversations = [];
@@ -170,6 +175,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- FUNÇÕES DO MODAL ---
+    const openModal = () => {
+        aboutModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Previne scroll do body quando modal está aberto
+        
+        // Adiciona animações às seções do modal
+        setTimeout(() => {
+            const sections = aboutModal.querySelectorAll('.content-section');
+            sections.forEach((section, index) => {
+                setTimeout(() => {
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        }, 100);
+    };
+
+    const closeModal = () => {
+        aboutModal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restaura scroll do body
+    };
+
     // --- INICIALIZAÇÃO E EVENT LISTENERS ---
     sendButton.addEventListener('click', handleSendMessage);
     newChatButton.addEventListener('click', startNewChat);
@@ -185,6 +212,41 @@ document.addEventListener('DOMContentLoaded', () => {
         historyContainer.classList.toggle('show');
     });
 
+    // ** LÓGICA PARA O MODAL **
+    aboutButton.addEventListener('click', openModal);
+    closeButton.addEventListener('click', closeModal);
+
+    // Fecha o modal quando clica fora dele
+    window.addEventListener('click', (event) => {
+        if (event.target === aboutModal) {
+            closeModal();
+        }
+    });
+
+    // Fecha o modal com a tecla ESC
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && aboutModal.style.display === 'flex') {
+            closeModal();
+        }
+    });
+
+    // Adiciona efeitos de interação para as seções do modal
+    const modalSections = aboutModal.querySelectorAll('.content-section');
+    modalSections.forEach(section => {
+        section.addEventListener('mouseenter', function() {
+            this.style.borderLeftColor = '#764ba2';
+        });
+        
+        section.addEventListener('mouseleave', function() {
+            this.style.borderLeftColor = '#667eea';
+        });
+
+        // Prepara as seções para animação
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(20px)';
+        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease, border-left-color 0.3s ease';
+    });
+
     loadAllConversations();
     if (allConversations.length === 0) {
         startNewChat();
@@ -192,3 +254,4 @@ document.addEventListener('DOMContentLoaded', () => {
         loadConversation(allConversations[0].id);
     }
 });
+
