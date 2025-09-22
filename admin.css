@@ -1,0 +1,202 @@
+/* admin.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap' );
+
+:root {
+    --cor-primaria: #4a90e2;
+    --cor-sucesso: #28a745;
+    --cor-erro: #dc3545;
+    --cor-fundo: #f4f7f9;
+    --cor-texto: #333;
+    --cor-borda: #e0e0e0;
+    --sombra-card: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: var(--sombra-card);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+#login-container h1 {
+    margin-top: 0;
+    color: var(--cor-primaria);
+}
+
+#login-container p {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+#password-input {
+    width: calc(100% - 20px);
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+button {
+    cursor: pointer;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+#login-btn {
+    background-color: var(--cor-primaria);
+    color: white;
+    width: 100%;
+}
+
+#login-btn:hover {
+    background-color: #357abd;
+}
+
+#admin-panel {
+    width: 90%;
+    max-width: 1200px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--sombra-card);
+    overflow: hidden;
+}
+
+#admin-panel header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background-color: var(--cor-primaria);
+    color: white;
+}
+
+#admin-panel header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+#logout-btn {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+}
+
+#logout-btn:hover {
+    background-color: white;
+    color: var(--cor-primaria);
+}
+
+main {
+    padding: 30px;
+}
+
+section {
+    margin-bottom: 40px;
+}
+
+h2 {
+    border-bottom: 2px solid var(--cor-primaria);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: var(--cor-primaria);
+}
+
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+}
+
+.card h3 {
+    margin-top: 0;
+}
+
+#total-conversas {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--cor-primaria);
+}
+
+#ultimas-conversas {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#ultimas-conversas li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+#ultimas-conversas li:last-child {
+    border-bottom: none;
+}
+
+#system-instruction-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+#save-instruction-btn {
+    background-color: var(--cor-sucesso);
+    color: white;
+}
+
+#save-instruction-btn:hover {
+    background-color: #218838;
+}
+
+#save-instruction-btn:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+}
+
+#save-status {
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+.status-saving { color: #555; }
+.status-success { color: var(--cor-sucesso); }
+.status-error { color: var(--cor-erro); }
