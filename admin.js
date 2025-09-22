@@ -1,206 +1,141 @@
-// Configuração da API
-const API_BASE_URL = 'https://chatbotflashcardsbackend.vercel.app';
+// admin.js
 
-// Variável global para armazenar a senha
-let adminPassword = '';
+document.addEventListener('DOMContentLoaded', () => {
+    const loginContainer = document.getElementById('login-container');
+    const adminPanel = document.getElementById('admin-panel');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
 
-// Função de login
-async function login() {
-    const passwordInput = document.getElementById('adminPassword');
-    const password = passwordInput.value.trim();
-    
-    if (!password) {
-        showAlert('loginAlert', 'Por favor, digite a senha de administrador.', 'error');
-        return;
-    }
-    
-    adminPassword = password;
-    
-    try {
-        // Testar a senha fazendo uma requisição para as estatísticas
-        const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-admin-password': adminPassword
-            }
-        });
-        
-        if (response.ok) {
-            // Login bem-sucedido
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'block';
-            
-            // Carregar dados do painel
-            await carregarDadosAdmin();
-            
+    // URL base da sua API backend
+    const API_BASE_URL = 'https://chatbotflashcardsbackend.vercel.app';
+
+    const checkLogin = ( ) => {
+        const storedPassword = sessionStorage.getItem('adminPassword');
+        if (storedPassword) {
+            showAdminPanel(storedPassword);
         } else {
-            const errorData = await response.json();
-            showAlert('loginAlert', errorData.error || 'Senha incorreta.', 'error');
+            showLogin();
         }
-        
-    } catch (error) {
-        console.error('Erro no login:', error);
-        showAlert('loginAlert', 'Erro ao conectar com o servidor. Verifique sua conexão.', 'error');
-    }
-}
+    };
 
-// Função para carregar todos os dados do painel
-async function carregarDadosAdmin() {
-    await Promise.all([
-        carregarEstatisticas(),
-        carregarInstrucaoSistema()
-    ]);
-}
+    const showLogin = () => {
+        loginContainer.classList.remove('hidden');
+        adminPanel.classList.add('hidden');
+    };
 
-// Função para carregar estatísticas
-async function carregarEstatisticas() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-admin-password': adminPassword
-            }
-        });
-        
-        if (response.ok) {
-            const stats = await response.json();
-            
-            // Atualizar cards de estatísticas
-            document.getElementById('totalConversas').textContent = stats.totalConversas;
-            document.getElementById('totalMensagens').textContent = stats.totalMensagens;
-            
-            // Atualizar lista de conversas recentes
-            atualizarConversasRecentes(stats.ultimasConversas);
-            
-        } else {
-            console.error('Erro ao carregar estatísticas');
+    const showAdminPanel = (password) => {
+        loginContainer.classList.add('hidden');
+        adminPanel.classList.remove('hidden');
+        fetchAdminData(password);
+        fetchSystemInstruction(password);
+    };
+
+    const handleLogin = () => {
+        const password = passwordInput.value;
+        if (!password) {
+            alert('Por favor, insira a senha.');
+            return;
         }
-        
-    } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
-    }
-}
+        sessionStorage.setItem('adminPassword', password);
+        showAdminPanel(password);
+    };
 
-// Função para atualizar a lista de conversas recentes
-function atualizarConversasRecentes(conversas) {
-    const container = document.getElementById('recentConversations');
-    
-    if (!conversas || conversas.length === 0) {
-        container.innerHTML = '<div class="loading">Nenhuma conversa encontrada.</div>';
-        return;
-    }
-    
-    let html = '';
-    conversas.forEach(conversa => {
-        const dataFormatada = new Date(conversa.dataHora).toLocaleString('pt-BR');
-        html += `
-            <div class="conversation-item">
-                <div class="conversation-title">${conversa.titulo}</div>
-                <div class="conversation-date">${dataFormatada}</div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
+    const handleLogout = () => {
+        sessionStorage.removeItem('adminPassword');
+        passwordInput.value = '';
+        showLogin();
+    };
 
-// Função para carregar instrução de sistema atual
-async function carregarInstrucaoSistema() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/system-instruction`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-admin-password': adminPassword
+    const fetchAdminData = async (password) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
+                headers: { 'x-admin-password': password }
+            });
+
+            if (response.status === 403) {
+                alert('Senha incorreta. Acesso negado.');
+                handleLogout();
+                return;
             }
-        });
-        
-        if (response.ok) {
+            if (!response.ok) throw new Error('Falha ao buscar dados.');
+
             const data = await response.json();
-            document.getElementById('systemInstruction').value = data.instruction;
-        } else {
-            console.error('Erro ao carregar instrução de sistema');
+            document.getElementById('total-conversas').innerText = data.totalConversas;
+            
+            const conversasList = document.getElementById('ultimas-conversas');
+            conversasList.innerHTML = '';
+            if (data.ultimasConversas.length === 0) {
+                conversasList.innerHTML = '<li>Nenhuma conversa encontrada.</li>';
+            } else {
+                data.ultimasConversas.forEach(conversa => {
+                    const li = document.createElement('li');
+                    const date = new Date(conversa.createdAt).toLocaleString('pt-BR');
+                    li.textContent = `${conversa.title} - ${date}`;
+                    conversasList.appendChild(li);
+                });
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Não foi possível carregar as métricas. Verifique o console para mais detalhes.');
         }
-        
-    } catch (error) {
-        console.error('Erro ao carregar instrução de sistema:', error);
-    }
-}
+    };
 
-// Função para salvar nova instrução de sistema
-async function salvarInstrucao() {
-    const textarea = document.getElementById('systemInstruction');
-    const instruction = textarea.value.trim();
-    
-    if (!instruction) {
-        showAlert('controlAlert', 'A instrução de sistema não pode estar vazia.', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/system-instruction`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-admin-password': adminPassword
-            },
-            body: JSON.stringify({ instruction })
-        });
-        
-        if (response.ok) {
+    const fetchSystemInstruction = async (password) => {
+        const instructionTextarea = document.getElementById('system-instruction-input');
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/system-instruction`, {
+                headers: { 'x-admin-password': password }
+            });
+            if (!response.ok) throw new Error('Falha ao buscar instrução.');
             const data = await response.json();
-            showAlert('controlAlert', '✅ ' + data.message, 'success');
-        } else {
-            const errorData = await response.json();
-            showAlert('controlAlert', '❌ ' + (errorData.error || 'Erro ao salvar instrução.'), 'error');
+            instructionTextarea.value = data.instruction;
+        } catch (error) {
+            console.error('Erro:', error);
+            instructionTextarea.value = 'Erro ao carregar a instrução.';
         }
-        
-    } catch (error) {
-        console.error('Erro ao salvar instrução:', error);
-        showAlert('controlAlert', '❌ Erro ao conectar com o servidor.', 'error');
-    }
-}
+    };
 
-// Função para mostrar alertas
-function showAlert(containerId, message, type) {
-    const container = document.getElementById(containerId);
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-    
-    container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
-    
-    // Remover o alerta após 5 segundos
-    setTimeout(() => {
-        container.innerHTML = '';
-    }, 5000);
-}
+    const saveSystemInstruction = async () => {
+        const password = sessionStorage.getItem('adminPassword');
+        const newInstruction = document.getElementById('system-instruction-input').value;
+        const saveStatus = document.getElementById('save-status');
+        const saveBtn = document.getElementById('save-instruction-btn');
 
-// Função para permitir login com Enter
-document.addEventListener('DOMContentLoaded', function() {
-    const passwordInput = document.getElementById('adminPassword');
-    
-    passwordInput.addEventListener('keypress', function(event) {
-        if (event.key === 'Enter') {
-            login();
+        saveBtn.disabled = true;
+        saveStatus.textContent = 'Salvando...';
+        saveStatus.className = 'status-saving';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/system-instruction`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-password': password
+                },
+                body: JSON.stringify({ newInstruction })
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Erro desconhecido.');
+
+            saveStatus.textContent = data.message;
+            saveStatus.className = 'status-success';
+        } catch (error) {
+            saveStatus.textContent = `Erro: ${error.message}`;
+            saveStatus.className = 'status-error';
+        } finally {
+            saveBtn.disabled = false;
+            setTimeout(() => { saveStatus.textContent = ''; }, 4000);
         }
+    };
+
+    loginBtn.addEventListener('click', handleLogin);
+    passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
     });
-    
-    // Focar no campo de senha ao carregar a página
-    passwordInput.focus();
+    logoutBtn.addEventListener('click', handleLogout);
+    document.getElementById('save-instruction-btn').addEventListener('click', saveSystemInstruction);
+
+    checkLogin();
 });
-
-// Função para atualizar dados periodicamente (opcional)
-function iniciarAtualizacaoAutomatica() {
-    setInterval(async () => {
-        if (document.getElementById('adminPanel').style.display !== 'none') {
-            await carregarEstatisticas();
-        }
-    }, 30000); // Atualizar a cada 30 segundos
-}
-
-// Iniciar atualização automática quando a página carregar
-document.addEventListener('DOMContentLoaded', function() {
-    iniciarAtualizacaoAutomatica();
-});
-
