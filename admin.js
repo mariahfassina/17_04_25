@@ -1,4 +1,4 @@
-// admin.js
+// admin.js (Com a URL da API CORRIGIDA )
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginContainer = document.getElementById('login-container');
@@ -6,9 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('password-input');
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
+    const saveInstructionBtn = document.getElementById('save-instruction-btn');
 
-    // URL base da sua API backend
-    const API_BASE_URL = 'https://chatbotflashcardsbackend.vercel.app';
+    // <<<--- A CORREÇÃO ESTÁ AQUI ---<<<
+    // A URL agora aponta para o seu backend no Render.com
+    const API_BASE_URL = 'https://one7-04-25backend.onrender.com';
+
+    // --- Funções Principais ---
 
     const checkLogin = ( ) => {
         const storedPassword = sessionStorage.getItem('adminPassword');
@@ -27,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showAdminPanel = (password) => {
         loginContainer.classList.add('hidden');
         adminPanel.classList.remove('hidden');
+        // Chama as funções para buscar os dados
         fetchAdminData(password);
         fetchSystemInstruction(password);
     };
@@ -47,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showLogin();
     };
 
+    // --- Funções de Comunicação com a API ---
+
     const fetchAdminData = async (password) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
@@ -58,26 +65,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 handleLogout();
                 return;
             }
-            if (!response.ok) throw new Error('Falha ao buscar dados.');
+            if (!response.ok) throw new Error('Falha ao buscar dados do servidor.');
 
             const data = await response.json();
             document.getElementById('total-conversas').innerText = data.totalConversas;
             
             const conversasList = document.getElementById('ultimas-conversas');
             conversasList.innerHTML = '';
-            if (data.ultimasConversas.length === 0) {
-                conversasList.innerHTML = '<li>Nenhuma conversa encontrada.</li>';
-            } else {
+            if (data.ultimasConversas && data.ultimasConversas.length > 0) {
                 data.ultimasConversas.forEach(conversa => {
                     const li = document.createElement('li');
                     const date = new Date(conversa.createdAt).toLocaleString('pt-BR');
                     li.textContent = `${conversa.title} - ${date}`;
                     conversasList.appendChild(li);
                 });
+            } else {
+                conversasList.innerHTML = '<li>Nenhuma conversa encontrada.</li>';
             }
         } catch (error) {
-            console.error('Erro:', error);
-            alert('Não foi possível carregar as métricas. Verifique o console para mais detalhes.');
+            console.error('Erro ao carregar métricas:', error);
+            alert('Não foi possível carregar as métricas. Verifique o console para detalhes.');
         }
     };
 
@@ -91,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             instructionTextarea.value = data.instruction;
         } catch (error) {
-            console.error('Erro:', error);
-            instructionTextarea.value = 'Erro ao carregar a instrução.';
+            console.error('Erro ao carregar instrução:', error);
+            instructionTextarea.value = 'Erro ao carregar a instrução do sistema.';
         }
     };
 
@@ -100,9 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = sessionStorage.getItem('adminPassword');
         const newInstruction = document.getElementById('system-instruction-input').value;
         const saveStatus = document.getElementById('save-status');
-        const saveBtn = document.getElementById('save-instruction-btn');
-
-        saveBtn.disabled = true;
+        
+        saveInstructionBtn.disabled = true;
         saveStatus.textContent = 'Salvando...';
         saveStatus.className = 'status-saving';
 
@@ -117,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Erro desconhecido.');
+            if (!response.ok) throw new Error(data.message || 'Erro desconhecido ao salvar.');
 
             saveStatus.textContent = data.message;
             saveStatus.className = 'status-success';
@@ -125,17 +131,17 @@ document.addEventListener('DOMContentLoaded', () => {
             saveStatus.textContent = `Erro: ${error.message}`;
             saveStatus.className = 'status-error';
         } finally {
-            saveBtn.disabled = false;
+            saveInstructionBtn.disabled = false;
             setTimeout(() => { saveStatus.textContent = ''; }, 4000);
         }
     };
 
-    loginBtn.addEventListener('click', handleLogin);
-    passwordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleLogin();
-    });
-    logoutBtn.addEventListener('click', handleLogout);
-    document.getElementById('save-instruction-btn').addEventListener('click', saveSystemInstruction);
+    // --- Adicionando os "Ouvintes de Evento" ---
+    if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+    if (passwordInput) passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    if (saveInstructionBtn) saveInstructionBtn.addEventListener('click', saveSystemInstruction);
 
+    // Inicia a verificação de login
     checkLogin();
 });
