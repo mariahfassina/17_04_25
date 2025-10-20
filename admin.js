@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchAdminData = async (password) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
                 headers: { 'x-admin-password': password }
             });
 
@@ -68,23 +68,55 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Falha ao buscar dados do servidor.');
 
             const data = await response.json();
-            document.getElementById('total-conversas').innerText = data.totalConversas;
-            
-            const conversasList = document.getElementById('ultimas-conversas');
-            conversasList.innerHTML = '';
-            if (data.ultimasConversas && data.ultimasConversas.length > 0) {
-                data.ultimasConversas.forEach(conversa => {
+
+            // Profundidade de Engajamento
+            const engagementMetrics = data.engagementMetrics;
+            document.getElementById('average-message-count').innerText = engagementMetrics.averageMessageCount ? engagementMetrics.averageMessageCount.toFixed(2) : '0';
+            document.getElementById('short-conversations').innerText = engagementMetrics.shortConversations;
+            document.getElementById('long-conversations').innerText = engagementMetrics.longConversations;
+
+            // Lealdade do Usuário
+            const topUsersList = document.getElementById('top-users-list');
+            topUsersList.innerHTML = '';
+            if (data.topUsers && data.topUsers.length > 0) {
+                data.topUsers.forEach(user => {
                     const li = document.createElement('li');
-                    const date = new Date(conversa.createdAt).toLocaleString('pt-BR');
-                    li.textContent = `${conversa.title} - ${date}`;
-                    conversasList.appendChild(li);
+                    li.textContent = `ID: ${user._id} - Conversas: ${user.chatCount}`;
+                    topUsersList.appendChild(li);
                 });
             } else {
-                conversasList.innerHTML = '<li>Nenhuma conversa encontrada.</li>';
+                topUsersList.innerHTML = '<li>Nenhum usuário ativo encontrado.</li>';
             }
+
+            // Análise de Falhas
+            const failureAnalysis = data.failureAnalysis;
+            document.getElementById('inconclusive-responses-count').innerText = failureAnalysis.inconclusiveResponsesCount;
+            const failedConversationsList = document.getElementById('failed-conversations-list');
+            failedConversationsList.innerHTML = '';
+            if (failureAnalysis.failedConversations && failureAnalysis.failedConversations.length > 0) {
+                failureAnalysis.failedConversations.forEach(conv => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${conv.title}</strong> (Usuário: ${conv.userId})<br>Falha: ${conv.messages}`;
+                    failedConversationsList.appendChild(li);
+                });
+            } else {
+                failedConversationsList.innerHTML = '<li>Nenhuma conversa com falha encontrada.</li>';
+            }
+            
+            // Manter as métricas existentes (Total de Conversas e Últimas Conversas) se ainda forem relevantes
+            // O endpoint do dashboard já retorna totalConversations dentro de engagementMetrics
+            document.getElementById('total-conversas').innerText = engagementMetrics.totalConversations;
+
+            // As últimas conversas não estão sendo retornadas pelo novo endpoint do dashboard, 
+            // então esta parte precisaria de um endpoint separado ou ser removida se não for mais necessária.
+            // Por simplicidade, vou deixar como está, mas sem dados.
+            const conversasList = document.getElementById('ultimas-conversas');
+            conversasList.innerHTML = '<li>Dados de últimas conversas não disponíveis no dashboard.</li>';
+
+
         } catch (error) {
-            console.error('Erro ao carregar métricas:', error);
-            alert('Não foi possível carregar as métricas. Verifique o console para detalhes.');
+            console.error('Erro ao carregar métricas do dashboard:', error);
+            alert('Não foi possível carregar as métricas do dashboard. Verifique o console para detalhes.');
         }
     };
 
