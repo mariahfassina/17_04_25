@@ -1,28 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CONFIGURAÇÃO PRINCIPAL ---
     const API_BASE_URL = 'https://one7-04-25backend.onrender.com';
 
-    // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
-    const chatWindow = document.getElementById('chat-window'  );
+    const chatWindow = document.getElementById('chat-window' );
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const newChatButton = document.getElementById('new-chat-btn');
     const historyList = document.getElementById('history-list');
     const menuToggleButton = document.getElementById('menu-toggle');
     const historyContainer = document.getElementById('history-container');
-
-    // --- REFERÊNCIAS AOS ELEMENTOS DO MODAL ---
     const aboutButton = document.getElementById('about-btn');
     const aboutModal = document.getElementById('aboutModal');
     const closeButton = document.querySelector('.close-button');
 
-    // --- VARIÁVEIS DE ESTADO ---
     let localChatHistory = [];
     let allConversations = [];
     let currentConversationId = null;
     let isBotTyping = false;
 
-    // --- FUNÇÕES DE GERENCIAMENTO DE HISTÓRICO (localStorage) ---
     const loadAllConversations = () => {
         const saved = localStorage.getItem('gemini_flashcard_conversations_v2');
         if (saved) allConversations = JSON.parse(saved);
@@ -30,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const saveAllConversations = () => localStorage.setItem('gemini_flashcard_conversations_v2', JSON.stringify(allConversations));
     const generateConversationId = () => `conv_${Date.now()}`;
+    
     const createNewConversation = (firstMessageText) => {
         currentConversationId = generateConversationId();
         const newConversation = {
@@ -42,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveAllConversations();
         updateHistoryListUI();
     };
+
     const updateCurrentConversation = () => {
         if (!currentConversationId) return;
         const convIndex = allConversations.findIndex(c => c.id === currentConversationId);
@@ -51,19 +47,21 @@ document.addEventListener('DOMContentLoaded', () => {
             saveAllConversations();
         }
     };
+
     const loadConversation = (conversationId) => {
         const conversation = allConversations.find(c => c.id === conversationId);
         if (!conversation) return;
         currentConversationId = conversationId;
         localChatHistory = [...conversation.messages];
         chatWindow.innerHTML = '';
-        localChatHistory.forEach(msg => addMessageToUI(msg.text, msg.role === 'model' ? 'bot' : 'user'));
+        localChatHistory.forEach(msg => addMessageToUI(msg.parts[0].text, msg.role));
         updateHistoryListUI();
         messageInput.focus();
         if (window.innerWidth <= 768) {
             historyContainer.classList.remove('show');
         }
     };
+
     const updateHistoryListUI = () => {
         historyList.innerHTML = '';
         allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -78,12 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- FUNÇÕES DE LÓGICA DO CHAT ---
     const startNewChat = () => {
         currentConversationId = null;
         localChatHistory = [];
         chatWindow.innerHTML = '';
-        addMessageToUI('Olá! 👋 Sou seu assistente de estudos e posso criar flash cards sobre qualquer assunto. Qual tema você gostaria de aprender hoje?', 'bot');
+        const initialBotMessage = 'Olá! 👋 Sou seu assistente de estudos e posso criar flash cards sobre qualquer assunto. Qual tema você gostaria de aprender hoje?';
+        addMessageToUI(initialBotMessage, 'model');
+        localChatHistory.push({ role: 'model', parts: [{ text: initialBotMessage }] });
         updateHistoryListUI();
         messageInput.focus();
         if (window.innerWidth <= 768) {
@@ -91,12 +90,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const addMessageToUI = (text, sender) => {
+    const addMessageToUI = (text, role) => {
+        const sender = role === 'model' ? 'bot' : 'user';
         const typingIndicator = chatWindow.querySelector('.typing-indicator');
         if (typingIndicator) typingIndicator.remove();
+        
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
-        messageElement.textContent = text;
+        messageElement.innerHTML = text.replace(/\n/g, '  
+');
+        
         chatWindow.appendChild(messageElement);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     };
@@ -122,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!userMessageText) return;
 
         addMessageToUI(userMessageText, 'user');
-        // Adiciona a mensagem ao histórico local no formato correto
         localChatHistory.push({ role: 'user', parts: [{ text: userMessageText }] });
 
         if (!currentConversationId) {
@@ -135,15 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleBotTyping(true);
 
         try {
-            // --- CORREÇÃO APLICADA AQUI ---
-            // Enviamos o histórico local completo, que agora inclui a última mensagem do usuário.
-            // O corpo da requisição tem apenas a chave "history", como o backend espera.
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    history: localChatHistory 
-                }),
+                body: JSON.stringify({ history: localChatHistory }),
             });
 
             if (!response.ok) {
@@ -152,29 +149,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            const botResponseText = data.response;
+            let botResponseText = data.response;
 
-            addMessageToUI(botResponseText, 'bot');
-            // Adiciona a resposta do bot ao histórico local
-            localChatHistory.push({ role: 'model', parts: [{ text: botResponseText }] });
-
-            // Esta lógica pode ser ajustada conforme a necessidade
+            // Unifica a resposta do bot para evitar duas mensagens seguidas
             if (botResponseText.includes('❓')) {
-                const followUpMsg = "Digite 'resposta' para visualizar a resposta.";
-                addMessageToUI(followUpMsg, 'bot');
-                localChatHistory.push({ role: 'model', parts: [{ text: followUpMsg }] });
+                botResponseText += "\n\n(Digite 'resposta' para visualizar a resposta.)";
             }
+
+            addMessageToUI(botResponseText, 'model');
+            localChatHistory.push({ role: 'model', parts: [{ text: botResponseText }] });
 
         } catch (error) {
             console.error('Erro ao enviar mensagem:', error);
-            addMessageToUI(`Desculpe, ocorreu um erro: ${error.message}`, 'bot');
+            addMessageToUI(`Desculpe, ocorreu um erro: ${error.message}`, 'model');
         } finally {
             toggleBotTyping(false);
             updateCurrentConversation();
         }
     };
 
-    // --- FUNÇÕES DO MODAL (sem alterações) ---
     const openModal = () => {
         aboutModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -194,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = 'auto';
     };
 
-    // --- INICIALIZAÇÃO E EVENT LISTENERS (sem alterações) ---
     sendButton.addEventListener('click', handleSendMessage);
     newChatButton.addEventListener('click', startNewChat);
     messageInput.addEventListener('keypress', (event) => {
@@ -204,20 +196,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    menuToggleButton.addEventListener('click', () => {
-        historyContainer.classList.toggle('show');
-    });
-
+    menuToggleButton.addEventListener('click', () => historyContainer.classList.toggle('show'));
     aboutButton.addEventListener('click', openModal);
     closeButton.addEventListener('click', closeModal);
-
-    window.addEventListener('click', (event) => {
-        if (event.target === aboutModal) closeModal();
-    });
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && aboutModal.style.display === 'flex') closeModal();
-    });
+    window.addEventListener('click', (event) => { if (event.target === aboutModal) closeModal(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && aboutModal.style.display === 'flex') closeModal(); });
 
     const modalSections = aboutModal.querySelectorAll('.content-section');
     modalSections.forEach(section => {
@@ -232,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (allConversations.length === 0) {
         startNewChat();
     } else {
-        loadConversation(allConversations[0].id);
+        const lastConv = allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+        loadConversation(lastConv.id);
     }
 });
