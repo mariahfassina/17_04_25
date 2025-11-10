@@ -3,18 +3,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = 'https://one7-04-25backend.onrender.com';
 
     // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
-    const chatWindow = document.getElementById('chat-window' );
+    const chatWindow = document.getElementById('chat-window'  );
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const newChatButton = document.getElementById('new-chat-btn');
     const historyList = document.getElementById('history-list');
-    const menuToggleButton = document.getElementById('menu-toggle'); // Botão do menu
-    const historyContainer = document.getElementById('history-container'); // Painel do histórico
+    const menuToggleButton = document.getElementById('menu-toggle');
+    const historyContainer = document.getElementById('history-container');
 
     // --- REFERÊNCIAS AOS ELEMENTOS DO MODAL ---
-    const aboutButton = document.getElementById('about-btn'); // Botão "Sobre o ChatBot"
-    const aboutModal = document.getElementById('aboutModal'); // Modal
-    const closeButton = document.querySelector('.close-button'); // Botão de fechar (X)
+    const aboutButton = document.getElementById('about-btn');
+    const aboutModal = document.getElementById('aboutModal');
+    const closeButton = document.querySelector('.close-button');
 
     // --- VARIÁVEIS DE ESTADO ---
     let localChatHistory = [];
@@ -57,10 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentConversationId = conversationId;
         localChatHistory = [...conversation.messages];
         chatWindow.innerHTML = '';
-        localChatHistory.forEach(msg => addMessageToUI(msg.text, msg.role));
+        localChatHistory.forEach(msg => addMessageToUI(msg.text, msg.role === 'model' ? 'bot' : 'user'));
         updateHistoryListUI();
         messageInput.focus();
-        // Esconde o menu após selecionar uma conversa em telas pequenas
         if (window.innerWidth <= 768) {
             historyContainer.classList.remove('show');
         }
@@ -87,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessageToUI('Olá! 👋 Sou seu assistente de estudos e posso criar flash cards sobre qualquer assunto. Qual tema você gostaria de aprender hoje?', 'bot');
         updateHistoryListUI();
         messageInput.focus();
-        // Esconde o menu ao iniciar novo chat em telas pequenas
         if (window.innerWidth <= 768) {
             historyContainer.classList.remove('show');
         }
@@ -124,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!userMessageText) return;
 
         addMessageToUI(userMessageText, 'user');
+        // Adiciona a mensagem ao histórico local no formato correto
         localChatHistory.push({ role: 'user', parts: [{ text: userMessageText }] });
 
         if (!currentConversationId) {
@@ -136,17 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleBotTyping(true);
 
         try {
-            const historyForApi = localChatHistory.slice(0, -1).map(msg => ({
-                role: msg.role,
-                parts: msg.parts
-            }));
-
+            // --- CORREÇÃO APLICADA AQUI ---
+            // Enviamos o histórico local completo, que agora inclui a última mensagem do usuário.
+            // O corpo da requisição tem apenas a chave "history", como o backend espera.
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    message: userMessageText,
-                    history: historyForApi 
+                    history: localChatHistory 
                 }),
             });
 
@@ -159,11 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const botResponseText = data.response;
 
             addMessageToUI(botResponseText, 'bot');
+            // Adiciona a resposta do bot ao histórico local
             localChatHistory.push({ role: 'model', parts: [{ text: botResponseText }] });
 
+            // Esta lógica pode ser ajustada conforme a necessidade
             if (botResponseText.includes('❓')) {
-                addMessageToUI("Digite 'resposta' para visualizar a resposta.", 'bot');
-                localChatHistory.push({ role: 'model', parts: [{ text: "Digite 'resposta' para visualizar a resposta." }] });
+                const followUpMsg = "Digite 'resposta' para visualizar a resposta.";
+                addMessageToUI(followUpMsg, 'bot');
+                localChatHistory.push({ role: 'model', parts: [{ text: followUpMsg }] });
             }
 
         } catch (error) {
@@ -175,12 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- FUNÇÕES DO MODAL ---
+    // --- FUNÇÕES DO MODAL (sem alterações) ---
     const openModal = () => {
         aboutModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Previne scroll do body quando modal está aberto
-        
-        // Adiciona animações às seções do modal
+        document.body.style.overflow = 'hidden';
         setTimeout(() => {
             const sections = aboutModal.querySelectorAll('.content-section');
             sections.forEach((section, index) => {
@@ -194,10 +191,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeModal = () => {
         aboutModal.style.display = 'none';
-        document.body.style.overflow = 'auto'; // Restaura scroll do body
+        document.body.style.overflow = 'auto';
     };
 
-    // --- INICIALIZAÇÃO E EVENT LISTENERS ---
+    // --- INICIALIZAÇÃO E EVENT LISTENERS (sem alterações) ---
     sendButton.addEventListener('click', handleSendMessage);
     newChatButton.addEventListener('click', startNewChat);
     messageInput.addEventListener('keypress', (event) => {
@@ -207,41 +204,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ** LÓGICA PARA O BOTÃO DO MENU HAMBÚRGUER **
     menuToggleButton.addEventListener('click', () => {
         historyContainer.classList.toggle('show');
     });
 
-    // ** LÓGICA PARA O MODAL **
     aboutButton.addEventListener('click', openModal);
     closeButton.addEventListener('click', closeModal);
 
-    // Fecha o modal quando clica fora dele
     window.addEventListener('click', (event) => {
-        if (event.target === aboutModal) {
-            closeModal();
-        }
+        if (event.target === aboutModal) closeModal();
     });
 
-    // Fecha o modal com a tecla ESC
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && aboutModal.style.display === 'flex') {
-            closeModal();
-        }
+        if (event.key === 'Escape' && aboutModal.style.display === 'flex') closeModal();
     });
 
-    // Adiciona efeitos de interação para as seções do modal
     const modalSections = aboutModal.querySelectorAll('.content-section');
     modalSections.forEach(section => {
-        section.addEventListener('mouseenter', function() {
-            this.style.borderLeftColor = '#764ba2';
-        });
-        
-        section.addEventListener('mouseleave', function() {
-            this.style.borderLeftColor = '#667eea';
-        });
-
-        // Prepara as seções para animação
+        section.addEventListener('mouseenter', function() { this.style.borderLeftColor = '#764ba2'; });
+        section.addEventListener('mouseleave', function() { this.style.borderLeftColor = '#667eea'; });
         section.style.opacity = '0';
         section.style.transform = 'translateY(20px)';
         section.style.transition = 'opacity 0.6s ease, transform 0.6s ease, border-left-color 0.3s ease';
@@ -254,4 +235,3 @@ document.addEventListener('DOMContentLoaded', () => {
         loadConversation(allConversations[0].id);
     }
 });
-
