@@ -1,9 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIGURAÇÃO PRINCIPAL ---
+    // ATENÇÃO: Se você está testando no seu ambiente local, use 'http://localhost:3000'
+    // Se você está testando com o backend hospedado no Render, use a URL do Render.
     const API_BASE_URL = 'https://one7-04-25backend.onrender.com';
 
     // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
-    const chatWindow = document.getElementById('chat-window' );
+    const chatWindow = document.getElementById('chat-window'  );
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const newChatButton = document.getElementById('new-chat-btn');
@@ -121,6 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
+        // CORREÇÃO APLICADA AQUI: Substitui \n por   
+ para quebrar linha no HTML
         messageElement.innerHTML = text.replace(/\n/g, '  
 ');
         
