@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
-        // CORREÇÃO FINAL: Substitui \n por   
+        // CORREÇÃO APLICADA AQUI: Substitui \n por   
  para quebrar linha no HTML
         messageElement.innerHTML = text.replace(/\n/g, '  
 ');
@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatWindow.appendChild(messageElement);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     };
+
 
     const toggleBotTyping = (isTyping) => {
         isBotTyping = isTyping;
