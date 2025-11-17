@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
-        // CORREÇÃO APLICADA AQUI: Substitui \n por   
+        // CORREÇÃO FINAL: Substitui \n por   
  para quebrar linha no HTML
         messageElement.innerHTML = text.replace(/\n/g, '  
 ');
