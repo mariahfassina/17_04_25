@@ -170,7 +170,6 @@
             align-items: center;
         }
 
-        /* NOVO: Botão "Sobre o ChatBot" */
         #about-btn {
             background: var(--primary-gradient);
             color: white;
@@ -189,7 +188,6 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
-        /* ** ESTILOS PARA O MENU HAMBÚRGUER ** */
         #menu-toggle {
             display: none; /* Escondido em telas grandes */
             position: absolute;
@@ -207,7 +205,6 @@
             text-align: center;
         }
 
-        /* ** MEDIA QUERIES PARA RESPONSIVIDADE ** */
         @media (max-width: 768px) {
             body {
                 padding: 0;
@@ -250,7 +247,6 @@
             }
         }
 
-        /* ESTILOS DO MODAL */
         .modal {
             display: none; /* Escondido por padrão */
             position: fixed; /* Fica por cima de tudo */
@@ -309,7 +305,6 @@
             cursor: pointer;
         }
 
-        /* Estilos do Conteúdo do Modal */
         .modal .header {
             text-align: center;
             margin-bottom: 40px;
@@ -443,7 +438,6 @@
             opacity: 0.9;
         }
 
-        /* Media Queries para o Modal */
         @media (max-width: 768px) {
             .modal-content {
                 padding: 20px;
@@ -462,7 +456,6 @@
     <div class="main-container">
         <!-- Container do Chat -->
         <div id="chat-container">
-            <!-- ** BOTÃO HAMBÚRGUER ADICIONADO ** -->
             <button id="menu-toggle">☰</button>
 
             <div id="chat-window">
@@ -499,49 +492,19 @@
             </div>
 
             <div class="content-section">
-                <h2 class="section-title">
-                    <div class="section-icon">🧠</div>
-                    O que é o ChatBot Flash Cards?
-                </h2>
-                <p class="section-text">
-                    O <span class="highlight">ChatBot Flash Cards</span> é uma ferramenta inovadora que utiliza Inteligência Artificial para transformar a maneira como você estuda. Ele cria <span class="highlight">flashcards personalizados</span> a partir de qualquer tema que você desejar, ajudando a memorizar e revisar conteúdos de forma dinâmica e interativa.
-                </p>
+                <h2 class="section-title"><span class="section-icon">💡</span>O que ele faz?</h2>
+                <p class="section-text">Este chatbot foi projetado para ser seu <span class="highlight">parceiro de estudos</span>. Basta digitar um tema, e ele criará um flash card com uma pergunta e uma resposta oculta, ajudando você a memorizar informações importantes de forma interativa.</p>
             </div>
 
             <div class="content-section">
-                <h2 class="section-title">
-                    <div class="section-icon">📚</div>
-                    Como Ele Pode Ajudar Você?
-                </h2>
-                <p class="section-text">
-                    Com o ChatBot Flash Cards, você pode:
-                    <ul>
-                        <li>Gerar flashcards sobre <span class="highlight">qualquer assunto</span>, desde história até programação.</li>
-                        <li>Revisar conceitos-chave de forma <span class="highlight">rápida e eficiente</span>.</li>
-                        <li>Personalizar seu aprendizado, focando nos tópicos que você mais precisa.</li>
-                        <li>Ter um <span class="highlight">assistente de estudos</span> disponível 24/7, a qualquer hora e em qualquer lugar.</li>
-                    </ul>
-                </p>
-            </div>
-
-            <div class="content-section">
-                <h2 class="section-title">
-                    <div class="section-icon">🚀</div>
-                    Tecnologia por Trás
-                </h2>
-                <p class="section-text">
-                    Este chatbot é alimentado por <span class="highlight">Inteligência Artificial</span> e <span class="highlight">Processamento de Linguagem Natural (PLN)</span>. Isso significa que ele consegue entender suas perguntas, analisar o conteúdo e gerar flashcards relevantes e de alta qualidade, tornando seu estudo mais inteligente e produtivo.
-                </p>
+                <h2 class="section-title"><span class="section-icon">⚙️</span>Como funciona?</h2>
+                <p class="section-text">Utilizando a poderosa <span class="highlight">API do Google Gemini</span>, o chatbot entende seu pedido, gera conteúdo relevante e o formata como um flash card. Todo o histórico de suas conversas fica salvo no seu navegador para você poder revisar quando quiser.</p>
             </div>
 
             <div class="credits">
                 <div class="credits-content">
-                    <h3>💜 Desenvolvido com Paixão</h3>
-                    <p>
-                        Este projeto foi criado por <strong>Mariah Fassina</strong><br>
-                        Técnico em Informática para Internet - 2023<br>
-                        Combinando tecnologia e educação para um futuro melhor
-                    </p>
+                    <h3>Desenvolvido com Paixão</h3>
+                    <p>Este projeto é um exemplo prático de como integrar uma IA de ponta em uma aplicação web moderna, construído com HTML, CSS, JavaScript e Node.js.</p>
                 </div>
             </div>
         </div>
@@ -550,5 +513,3 @@
     <script src="client.js"></script>
 </body>
 </html>
-
-
