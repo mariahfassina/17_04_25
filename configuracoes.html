@@ -84,7 +84,7 @@
 </head>
 <body>
     <div class="container">
-        <p><a href="/" style="text-decoration: none; color: #667eea; font-weight: bold; font-size: 1.1em;">&larr; Voltar para o Chatbot</a></p>
+        <p><a href="index.html" style="text-decoration: none; color: #667eea; font-weight: bold; font-size: 1.1em;">&larr; Voltar para o Chatbot</a></p>
         <h1>Configurações de Personalidade do Bot</h1>
         
         <div class="current-instruction">
@@ -102,87 +102,6 @@
         <div id="message-box" class="message"></div>
     </div>
 
-    <script>
-        // ATENÇÃO: Se estiver rodando localmente, mude para "http://localhost:3000"
-        const BACKEND_URL = "https://3000-iyd0myo2c92dr1dscbfwj-e6fdc34b.manusvm.computer"; // URL temporário de teste
-        // const BACKEND_URL = "http://localhost:3000"; // Use este se estiver rodando localmente
-
-        const customInstructionTextarea = document.getElementById('custom-instruction' );
-        const activeInstructionSpan = document.getElementById('active-instruction');
-        const globalInstructionSpan = document.getElementById('global-instruction');
-        const messageBox = document.getElementById('message-box');
-        const form = document.getElementById('personality-form');
-
-        // Função para exibir mensagens de feedback
-        function showMessage(text, type) {
-            messageBox.textContent = text;
-            messageBox.className = `message ${type}`;
-            messageBox.style.display = 'block';
-            setTimeout(() => {
-                messageBox.style.display = 'none';
-            }, 5000);
-        }
-
-        // 1. Carregar as instruções atuais
-        async function loadInstructions() {
-            try {
-                // Carregar instrução personalizada do usuário
-                const userResponse = await fetch(`${BACKEND_URL}/api/user/preferences`);
-                const userData = await userResponse.json();
-                const userInstruction = userData.systemInstruction || "";
-                
-                customInstructionTextarea.value = userInstruction;
-                activeInstructionSpan.textContent = userInstruction || "Nenhuma. Usando a Global.";
-
-                // Carregar instrução global do admin (apenas para visualização)
-                // Usamos uma senha de admin estática para simular o acesso
-                const adminResponse = await fetch(`${BACKEND_URL}/api/admin/system-instruction`, {
-                    headers: {
-                        "x-admin-password": "admin123" // Senha estática do server.js
-                    }
-                });
-                const adminData = await adminResponse.json();
-                globalInstructionSpan.textContent = adminData.instruction || "Nenhuma.";
-
-            } catch (error) {
-                console.error("Erro ao carregar instruções:", error);
-                showMessage("Erro ao carregar as configurações. Verifique se o backend está rodando.", "error");
-            }
-        }
-
-        // 2. Salvar a instrução personalizada
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const newInstruction = customInstructionTextarea.value.trim();
-
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/user/preferences`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ newInstruction: newInstruction })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    showMessage(data.message || "Personalidade salva com sucesso!", "success");
-                    // Atualiza a instrução ativa após salvar
-                    activeInstructionSpan.textContent = newInstruction || "Nenhuma. Usando a Global.";
-                } else {
-                    showMessage(data.message || "Erro ao salvar a personalidade.", "error");
-                }
-
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                showMessage("Erro de conexão ao tentar salvar a personalidade.", "error");
-            }
-        });
-
-        // Carregar ao iniciar
-        loadInstructions();
-    </script>
+    <script src="configuracoes.js"></script>
 </body>
 </html>
