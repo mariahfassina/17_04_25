@@ -1,11 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CONFIGURAÇÃO PRINCIPAL ---
-    // ATENÇÃO: Se você está testando no seu ambiente local, use 'http://localhost:3000'
-    // Se você está testando com o backend hospedado no Render, use a URL do Render.
     const API_BASE_URL = 'https://one7-04-25backend.onrender.com';
 
-    // --- REFERÊNCIAS AOS ELEMENTOS DA INTERFACE ---
-    const chatWindow = document.getElementById('chat-window'  );
+    const chatWindow = document.getElementById('chat-window' );
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const newChatButton = document.getElementById('new-chat-btn');
@@ -16,13 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const aboutModal = document.getElementById('aboutModal');
     const closeButton = document.querySelector('.close-button');
 
-    // --- VARIÁVEIS DE ESTADO ---
     let localChatHistory = [];
     let allConversations = [];
     let currentConversationId = null;
     let isBotTyping = false;
 
-    // --- FUNÇÕES DE GERENCIAMENTO DE HISTÓRICO (localStorage) ---
     const loadAllConversations = () => {
         const saved = localStorage.getItem('gemini_flashcard_conversations_v2');
         if (saved) {
@@ -68,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
         localChatHistory = [...conversation.messages];
         chatWindow.innerHTML = '';
         
-        // CORREÇÃO CRÍTICA: Acessa o texto da mensagem da forma correta.
         localChatHistory.forEach(msg => {
             if (msg.parts && msg.parts[0] && typeof msg.parts[0].text === 'string') {
                 addMessageToUI(msg.parts[0].text, msg.role);
@@ -96,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- FUNÇÕES DE LÓGICA DO CHAT ---
     const startNewChat = () => {
         currentConversationId = null;
         localChatHistory = [];
@@ -106,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         addMessageToUI(initialBotMessage, 'model');
         
-        // CORREÇÃO CRÍTICA: Adiciona a mensagem inicial ao histórico para contexto.
         localChatHistory.push({ role: 'model', parts: [{ text: initialBotMessage }] });
 
         updateHistoryListUI();
@@ -123,8 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
-        // CORREÇÃO APLICADA AQUI: Substitui \n por   
- para quebrar linha no HTML
         messageElement.innerHTML = text.replace(/\n/g, '  
 ');
         
@@ -196,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- FUNÇÕES DO MODAL (sem alterações) ---
     const openModal = () => {
         aboutModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -216,7 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = 'auto';
     };
 
-    // --- INICIALIZAÇÃO E EVENT LISTENERS ---
     sendButton.addEventListener('click', handleSendMessage);
     newChatButton.addEventListener('click', startNewChat);
     messageInput.addEventListener('keypress', (event) => {
@@ -241,7 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
         section.style.transition = 'opacity 0.6s ease, transform 0.6s ease, border-left-color 0.3s ease';
     });
 
-    // --- INICIALIZAÇÃO DO CHAT ---
     loadAllConversations();
     if (allConversations.length === 0) {
         startNewChat();
